@@ -51,6 +51,32 @@ app.get('/tabla/:nombre', (req, res) => {
   });
 });
 
+// Endpoint reutilizable para leer un registro de cualquier tabla
+// Si quieres construir la consulta para postman, en este caso filtrar usuarios por rol de admin y de fehca seria asi:
+// http://localhost:3000/tabla/usuarios/filtrar?rol=admin&fecha=2021-05-01
+// Endpoint para leer registros de una tabla con filtros dinámicos
+app.get('/tabla/:nombre/filtrar', (req, res) => {
+  const nombreTabla = req.params.nombre;
+  const tablaEscapada = mysql.escapeId(nombreTabla);
+  const filtros = req.query;
+
+  let query = `SELECT * FROM ${tablaEscapada} WHERE 1=1`;
+
+  for (const [campo, valor] of Object.entries(filtros)) {
+    query += ` AND ${mysql.escapeId(campo)} = ${mysql.escape(valor)}`;
+  }
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error al ejecutar la consulta:', err);
+      return res.status(500).json({ error: 'Error al leer los registros de la tabla con filtros.' });
+    }
+    res.json(results);
+  });
+});
+
+
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
