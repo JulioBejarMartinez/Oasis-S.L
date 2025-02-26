@@ -57,4 +57,33 @@ public class ApiClient {
         }
         return response;
     }
+
+    // Metodo para insertar un registro en una tabla
+    // Recibe el nombre de la tabla y un mapa con los datos del registro
+
+    public String insertarRegistro(String nombreTabla, Map<String, Object> datos) {
+        String response = "";
+        try {
+            String endpoint = API_URL + "tabla/" + nombreTabla;
+            HttpClient client = HttpClient.newHttpClient();
+
+            StringJoiner jsonDatos = new StringJoiner(",", "{", "}");
+            for (Map.Entry<String, Object> entry : datos.entrySet()) {
+                jsonDatos.add("\"" + entry.getKey() + "\":\"" + entry.getValue().toString() + "\"");
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(endpoint))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonDatos.toString()))
+                    .build();
+
+            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            response = httpResponse.body();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
+
 }

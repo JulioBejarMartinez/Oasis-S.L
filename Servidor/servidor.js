@@ -75,6 +75,34 @@ app.get('/tabla/:nombre/filtrar', (req, res) => {
   });
 });
 
+// Endpoint para insertar registros en cualquier tabla
+// Toma el nombre de la tabla como parametros.
+// Todos los campos y valores a insertar deben enviarse en el cuerpo de la petición.
+// Ejemplo de cuerpo de petición:
+// {
+//   "nombre": "Juan",
+//   "apellido": "Pérez",
+//   "edad": 25
+// }
+app.post('/tabla/:nombre', (req, res) => {
+  const nombreTabla = req.params.nombre;
+  const tablaEscapada = mysql.escapeId(nombreTabla);
+  const datos = req.body;
+
+  const campos = Object.keys(datos).map(campo => mysql.escapeId(campo)).join(', ');
+  const valores = Object.values(datos).map(valor => mysql.escape(valor)).join(', ');
+
+  const query = `INSERT INTO ${tablaEscapada} (${campos}) VALUES (${valores})`;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error al ejecutar la inserción:', err);
+      return res.status(500).json({ error: 'Error al insertar los registros en la tabla.' });
+    }
+    res.json({ message: 'Registro insertado exitosamente', id: results.insertId });
+  });
+});
+
 
 
 // Iniciar el servidor
