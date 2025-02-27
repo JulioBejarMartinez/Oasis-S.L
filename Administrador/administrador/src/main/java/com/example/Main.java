@@ -1,47 +1,22 @@
 package com.example;
 
-import com.example.APIConecction.ApiClient;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
-public class Main {
+public class Main extends Application {
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/InterfazJardin.fxml"));
+        Scene scene = new Scene(loader.load());
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Jardines Oasis S.L.");
+        primaryStage.show();
+    }
+
     public static void main(String[] args) {
-        ApiClient apiClient = new ApiClient();
-        String nombreTabla = "Usuarios"; // Aqui se puede cambiar el nombre de la tabla
-
-        // Insertar un registro en la tabla
-        //Map<String, Object> datos = new HashMap<>();
-        //datos.put("nombre", "Joselin");
-        //datos.put("email", "holasoyjoselin@gmail.com");
-        //datos.put("contraseña_hash", "123456789");
-        //datos.put("fecha_registro", "2025-02-25 17:58:36");
-        //datos.put("rol", "admin");
-
-        //String respuestaInsercion = apiClient.insertarRegistro(nombreTabla, datos);
-        //System.out.println("Respuesta de la API (inserción): " + respuestaInsercion);
-
-         // Actualizar un registro en la tabla
-         String idColumna = "usuario_id"; // Nombre de la columna de identificación
-         String id = "3"; // ID del registro a actualizar
-         //Map<String, Object> datosActualizados = new HashMap<>();
-         //datosActualizados.put("nombre", "Julio");
-         //datosActualizados.put("email", "holasoyjulio@gmail.com");
- 
-         //String respuestaActualizacion = apiClient.actualizarRegistro(nombreTabla, idColumna, id, datosActualizados);
-         //System.out.println("Respuesta de la API (actualización): " + respuestaActualizacion);
-
-        // Borrar un registro en la tabla
-        String respuestaBorrado = apiClient.borrarRegistro(nombreTabla, idColumna, id);
-        System.out.println("Respuesta de la API (borrado): " + respuestaBorrado);
-
-        // Obtener los registros de la tabla sin filtros
-        //String registros = apiClient.getRegistros(nombreTabla);
-        //System.out.println("Respuesta de la API" + registros);
-
-        // Obtener los registros de la tabla con filtros
-        //Map<String, String> filtros = new HashMap<>();
-        //filtros.put("rol", "admin"); // Filtro por rol
-        //filtros.put("fecha_registro", "2022-01-01"); // Filtro por fecha de registro
-
-        //String registrosConFiltros = apiClient.getRegistrosConFiltros(nombreTabla, filtros);
-        //System.out.println("Respuesta de la API con filtros: " + registrosConFiltros);
+        launch(args);
     }
 }
