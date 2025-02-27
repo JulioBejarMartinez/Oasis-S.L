@@ -37,6 +37,10 @@ public class InterfazJardinController {
     public void initialize() {
         apiClient = new ApiClient();
         usuariosButton.setOnAction(event -> cargarUsuarios());
+        
+        // Apply styles to the TableView
+        tableView.setStyle("-fx-background-color: #FFD69E; -fx-border-color: #EDA052;");
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
     private void cargarUsuarios() {
@@ -69,7 +73,13 @@ public class InterfazJardinController {
                     return new SimpleStringProperty(param.getValue().optString(key));
                 }
             });
+            column.setStyle("-fx-background-color: #FFD69E; -fx-border-color: #EDA052;");
             tableView.getColumns().add(column);
+        }
+
+        // Set proportional resizing for columns
+        for (TableColumn<JSONObject, ?> column : tableView.getColumns()) {
+            column.prefWidthProperty().bind(tableView.widthProperty().divide(tableView.getColumns().size()));
         }
 
         for (int i = 0; i < jsonArray.length(); i++) {

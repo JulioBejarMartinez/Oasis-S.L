@@ -1,0 +1,14 @@
+.table-view {
+    -fx-background-color: #FFD69E;
+    -fx-border-color: #EDA052;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #FFD69E;
+    -fx-border-color: #EDA052;
+}
+
+.table-view .cell {
+    -fx-background-color: #FFD69E;
+    -fx-border-color: #EDA052;
+}
