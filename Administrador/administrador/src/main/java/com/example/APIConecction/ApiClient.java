@@ -115,4 +115,24 @@ public class ApiClient {
         return response;
     }
 
+    public String borrarRegistro(String nombreTabla, String idColumna, String id) {
+        String response = "";
+        try {
+            String endpoint = API_URL + "tabla/" + nombreTabla + "/" + id + "?idColumna=" + idColumna;
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(endpoint))
+                    .header("Content-Type", "application/json")
+                    .DELETE()
+                    .build();
+
+            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            response = httpResponse.body();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
+
 }

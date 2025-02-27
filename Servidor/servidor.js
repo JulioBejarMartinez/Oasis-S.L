@@ -128,6 +128,27 @@ app.put('/tabla/:nombre/:id', (req, res) => {
   });
 });
 
+// Endpoint para borrar registros en cualquier tabla
+// Toma el nombre de la tabla como parametros.
+// El ID del registro a borrar debe enviarse en la URL.
+// Endpoint para borrar registros en cualquier tabla
+app.delete('/tabla/:nombre/:id', (req, res) => {
+  const nombreTabla = req.params.nombre;
+  const id = req.params.id;
+  const idColumna = req.query.idColumna || 'id'; // Nombre de la columna de identificación, por defecto 'id'
+  const tablaEscapada = mysql.escapeId(nombreTabla);
+
+  const query = `DELETE FROM ${tablaEscapada} WHERE ${mysql.escapeId(idColumna)} = ${mysql.escape(id)}`;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error al ejecutar el borrado:', err);
+      return res.status(500).json({ error: 'Error al borrar el registro de la tabla.' });
+    }
+    res.json({ message: 'Registro borrado exitosamente' });
+  });
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);

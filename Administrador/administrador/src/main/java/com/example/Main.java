@@ -1,8 +1,5 @@
 package com.example;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.example.APIConecction.ApiClient;
 
 public class Main {
@@ -23,13 +20,17 @@ public class Main {
 
          // Actualizar un registro en la tabla
          String idColumna = "usuario_id"; // Nombre de la columna de identificación
-         String id = "1"; // ID del registro a actualizar
-         Map<String, Object> datosActualizados = new HashMap<>();
-         datosActualizados.put("nombre", "Julio");
-         datosActualizados.put("email", "holasoyjulio@gmail.com");
+         String id = "3"; // ID del registro a actualizar
+         //Map<String, Object> datosActualizados = new HashMap<>();
+         //datosActualizados.put("nombre", "Julio");
+         //datosActualizados.put("email", "holasoyjulio@gmail.com");
  
-         String respuestaActualizacion = apiClient.actualizarRegistro(nombreTabla, idColumna, id, datosActualizados);
-         System.out.println("Respuesta de la API (actualización): " + respuestaActualizacion);
+         //String respuestaActualizacion = apiClient.actualizarRegistro(nombreTabla, idColumna, id, datosActualizados);
+         //System.out.println("Respuesta de la API (actualización): " + respuestaActualizacion);
+
+        // Borrar un registro en la tabla
+        String respuestaBorrado = apiClient.borrarRegistro(nombreTabla, idColumna, id);
+        System.out.println("Respuesta de la API (borrado): " + respuestaBorrado);
 
         // Obtener los registros de la tabla sin filtros
         //String registros = apiClient.getRegistros(nombreTabla);
