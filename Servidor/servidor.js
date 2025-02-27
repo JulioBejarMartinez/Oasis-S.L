@@ -103,7 +103,30 @@ app.post('/tabla/:nombre', (req, res) => {
   });
 });
 
+// Endpoint para actualizar registros en cualquier tabla
+// Toma el nombre de la tabla como parametros.
+// El ID del registro a actualizar debe enviarse en la URL.
+// Todos los campos y valores a actualizar deben enviarse en el cuerpo de la petición.
+// Endpoint para actualizar registros en cualquier tabla
+app.put('/tabla/:nombre/:id', (req, res) => {
+  const nombreTabla = req.params.nombre;
+  const id = req.params.id;
+  const idColumna = req.query.idColumna || 'id'; // Nombre de la columna de identificación, por defecto 'id'
+  const tablaEscapada = mysql.escapeId(nombreTabla);
+  const datos = req.body;
 
+  const updates = Object.keys(datos).map(campo => `${mysql.escapeId(campo)} = ${mysql.escape(datos[campo])}`).join(', ');
+
+  const query = `UPDATE ${tablaEscapada} SET ${updates} WHERE ${mysql.escapeId(idColumna)} = ${mysql.escape(id)}`;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error al ejecutar la actualización:', err);
+      return res.status(500).json({ error: 'Error al actualizar los registros en la tabla.' });
+    }
+    res.json({ message: 'Registro actualizado exitosamente' });
+  });
+});
 
 // Iniciar el servidor
 app.listen(port, () => {

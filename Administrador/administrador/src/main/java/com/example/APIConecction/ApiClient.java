@@ -86,4 +86,33 @@ public class ApiClient {
         return response;
     }
 
+    // Metodo para actualizar un registro en una tabla
+    // Recibe el nombre de la tabla, el id del registro y un mapa con los datos a actualizar
+    // Retorna un string con la respuesta del servidor
+    
+    public String actualizarRegistro(String nombreTabla, String idColumna, String id, Map<String, Object> datos) {
+        String response = "";
+        try {
+            String endpoint = API_URL + "tabla/" + nombreTabla + "/" + id + "?idColumna=" + idColumna;
+            HttpClient client = HttpClient.newHttpClient();
+
+            StringJoiner jsonDatos = new StringJoiner(",", "{", "}");
+            for (Map.Entry<String, Object> entry : datos.entrySet()) {
+                jsonDatos.add("\"" + entry.getKey() + "\":\"" + entry.getValue().toString() + "\"");
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(endpoint))
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(jsonDatos.toString()))
+                    .build();
+
+            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            response = httpResponse.body();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
+
 }
