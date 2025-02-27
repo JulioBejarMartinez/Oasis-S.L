@@ -11,16 +11,17 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #BBF4ED;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.InterfazJardinController">
    <children>
       <Button fx:id="usuariosButton" layoutX="14.0" layoutY="163.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Usuarios" />
-      <Button layoutX="14.0" layoutY="207.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Jardines" />
-      <Button layoutX="14.0" layoutY="253.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Productos" />
-      <Button layoutX="14.0" layoutY="300.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Facturas" />
+      <Button fx:id="jardinesButton" layoutX="14.0" layoutY="199.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Jardines" />
+      <Button fx:id="productosButton" layoutX="14.0" layoutY="273.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Productos" />
+      <Button fx:id="facturasButton" layoutX="14.0" layoutY="348.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Facturas" />
+      <Button fx:id="plantasButton" layoutX="14.0" layoutY="236.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Plantas" />
+      <Button fx:id="configuracionesButton" layoutX="14.0" layoutY="311.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Configuraciones" />
       <ImageView fitHeight="115.0" fitWidth="113.0" layoutX="14.0" layoutY="12.0" pickOnBounds="true" preserveRatio="true">
          <image>
             <Image url="@OIG1.jpg" />
          </image>
       </ImageView>
-      <Button layoutX="14.0" layoutY="342.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Cerrar Sesion" />
-      <TableView fx:id="tableView" layoutX="140.0" layoutY="46.0" prefHeight="336.0" prefWidth="447.0" style="-fx-background-color: #FFD69E;" AnchorPane.topAnchor="46.0" AnchorPane.bottomAnchor="18.0" AnchorPane.leftAnchor="140.0" AnchorPane.rightAnchor="18.0" />
+      <TableView fx:id="tableView" layoutX="138.0" layoutY="48.0" prefHeight="344.0" prefWidth="448.0" style="-fx-background-color: #FFD69E;" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="138.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="48.0" />
       <Label layoutX="14.0" layoutY="125.0" prefHeight="30.0" prefWidth="113.0" text="OASIS S.L" textAlignment="CENTER" textOverrun="CENTER_ELLIPSIS">
          <font>
             <Font name="Lucida Sans Demibold Italic" size="23.0" />

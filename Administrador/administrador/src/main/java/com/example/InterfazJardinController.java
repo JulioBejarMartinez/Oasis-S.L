@@ -13,7 +13,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.util.Callback;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -29,32 +28,60 @@ public class InterfazJardinController {
     private Button usuariosButton;
 
     @FXML
+    private Button jardinesButton;
+
+    @FXML
+    private Button productosButton;
+
+    @FXML
+    private Button facturasButton;
+
+    @FXML
+    private Button plantasButton;
+
+    @FXML
+    private Button configuracionesButton;
+
+    @FXML
     private TableView<JSONObject> tableView;
 
     private ApiClient apiClient;
 
+    private boolean isLoading = false;
+
     @FXML
     public void initialize() {
         apiClient = new ApiClient();
-        usuariosButton.setOnAction(event -> cargarUsuarios());
+        usuariosButton.setOnAction(event -> cargarTabla("Usuarios"));
+        jardinesButton.setOnAction(event -> cargarTabla("Jardines"));
+        productosButton.setOnAction(event -> cargarTabla("Productos"));
+        facturasButton.setOnAction(event -> cargarTabla("Facturas"));
+        plantasButton.setOnAction(event -> cargarTabla("Plantas"));
+        configuracionesButton.setOnAction(event -> cargarTabla("Configuraciones"));
         
         // Apply styles to the TableView
         tableView.setStyle("-fx-background-color: #FFD69E; -fx-border-color: #EDA052;");
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
-    private void cargarUsuarios() {
-        String nombreTabla = "Usuarios";
+    private void cargarTabla(String nombreTabla) {
+        if (isLoading) {
+            return; // Prevent multiple simultaneous loads
+        }
+        isLoading = true;
+
         String response = apiClient.getRegistros(nombreTabla);
 
         if (response == null || response.isEmpty()) {
             mostrarAlerta("Error", "No se pudieron cargar los registros.");
+            isLoading = false;
             return;
         }
 
         JSONArray jsonArray = new JSONArray(response);
         if (jsonArray.length() == 0) {
             mostrarAlerta("Información", "No hay registros en la tabla.");
+            isLoading = false;
             return;
         }
 
@@ -85,6 +112,8 @@ public class InterfazJardinController {
         for (int i = 0; i < jsonArray.length(); i++) {
             tableView.getItems().add(jsonArray.getJSONObject(i));
         }
+
+        isLoading = false;
     }
 
     private void mostrarAlerta(String titulo, String mensaje) {
