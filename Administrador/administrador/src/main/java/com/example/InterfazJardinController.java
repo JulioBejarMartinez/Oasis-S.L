@@ -178,66 +178,153 @@ public class InterfazJardinController {
             }
     }
 
+    //
+    //
+    // Funciones para mostrar los formularios de agregar un registro a cada una de las tablas
+    // Cada una de estas funciones muestra un formulario con los campos necesarios para agregar un registro
+    // Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
+    //
+    //
+
+
+    //Funcion para mostrar el formulario de agregar un usuario
+    //Se muestra un dialogo con los campos necesarios para agregar un usuario
+    //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
     private void mostrarFormularioAgregarUsuario(){
+
         Dialog<JSONObject> dialog = new Dialog<>();
         dialog.setTitle("Agregar Usuario");
 
-    // Set the button types
-    ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-    dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+        // Set the button types
+        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
 
-    // Create the username and email labels and fields
-    GridPane grid = new GridPane();
-    grid.setHgap(10);
-    grid.setVgap(10);
-    grid.setPadding(new Insets(20, 150, 10, 10));
+        // Create the username and email labels and fields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
 
-    TextField nombre = new TextField();
-    nombre.setPromptText("Nombre");
-    TextField email = new TextField();
-    email.setPromptText("Email");
-    PasswordField password = new PasswordField();
-    password.setPromptText("Contraseña");
-    ComboBox<String> rol = new ComboBox<>();
-    rol.getItems().addAll("cliente", "admin");
-    rol.setPromptText("Rol");
+        TextField nombre = new TextField();
+        nombre.setPromptText("Nombre");
+        TextField email = new TextField();
+        email.setPromptText("Email");
+        PasswordField password = new PasswordField();
+        password.setPromptText("Contraseña");
+        ComboBox<String> rol = new ComboBox<>();
+        rol.getItems().addAll("cliente", "admin");
+        rol.setPromptText("Rol");
 
-    grid.add(new Label("Nombre:"), 0, 0);
-    grid.add(nombre, 1, 0);
-    grid.add(new Label("Email:"), 0, 1);
-    grid.add(email, 1, 1);
-    grid.add(new Label("Contraseña:"), 0, 2);
-    grid.add(password, 1, 2);
-    grid.add(new Label("Rol:"), 0, 3);
-    grid.add(rol, 1, 3);
+        grid.add(new Label("Nombre:"), 0, 0);
+        grid.add(nombre, 1, 0);
+        grid.add(new Label("Email:"), 0, 1);
+        grid.add(email, 1, 1);
+        grid.add(new Label("Contraseña:"), 0, 2);
+        grid.add(password, 1, 2);
+        grid.add(new Label("Rol:"), 0, 3);
+        grid.add(rol, 1, 3);
 
-    dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().setContent(grid);
 
-    // Convert the result to a username-password-pair when the login button is clicked.
-    dialog.setResultConverter(dialogButton -> {
-        if (dialogButton == addButtonType) {
-            JSONObject newUser = new JSONObject();
-            newUser.put("nombre", nombre.getText());
-            newUser.put("email", email.getText());
-            newUser.put("contraseña_hash", password.getText());
-            newUser.put("rol", rol.getValue());
-            newUser.put("fecha_registro", LocalDateTime.now().toString());
+        // Convierte el resultado a un JSONObject cuando se hace clic en el botón Agregar.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                JSONObject newUser = new JSONObject();
+                newUser.put("nombre", nombre.getText());
+                newUser.put("email", email.getText());
+                newUser.put("contraseña_hash", password.getText());
+                newUser.put("rol", rol.getValue());
+                newUser.put("fecha_registro", LocalDateTime.now().toString());
             return newUser;
-        }
+            }
         return null;
     });
 
     Optional<JSONObject> result = dialog.showAndWait();
 
     result.ifPresent(user -> {
-        // Call your API to add the user
+        // LLamo a la Api para hacer la inserción del usuario
         String response = apiClient.insertarRegistro("Usuarios", user.toMap());
         mostrarAlerta("Resultado", response);
     });
+
+    cargarTabla(tablaActual);
     }
 
+
+    //Funcion para mostrar el formulario de agregar un jardin
+    //Se muestra un dialogo con los campos necesarios para agregar un jardin
+    //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
     private void mostrarFormularioAgregarJardin(){
 
+        Dialog<JSONObject> dialog = new Dialog<>();
+        dialog.setTitle("Agregar Jardín");
+
+        // Set the button types
+        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+        // Create the labels and fields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField ubicacion = new TextField();
+        ubicacion.setPromptText("Ubicación");
+
+        ComboBox<Integer> usuarioIdComboBox = new ComboBox<>();
+        usuarioIdComboBox.setPromptText("Usuario ID");
+
+        ComboBox<Integer> configuracionIdComboBox = new ComboBox<>();
+        configuracionIdComboBox.setPromptText("Configuración ID");
+
+        // Fetch user IDs from the API and populate the ComboBox
+        String responseUsuarios = apiClient.getRegistros("Usuarios");
+        JSONArray usuarios = new JSONArray(responseUsuarios);
+        for (int i = 0; i < usuarios.length(); i++) {
+            JSONObject usuario = usuarios.getJSONObject(i);
+            usuarioIdComboBox.getItems().add(usuario.getInt("usuario_id"));
+    }
+
+        // Fetch configuration IDs from the API and populate the ComboBox
+        String responseConfiguraciones = apiClient.getRegistros("Configuraciones");
+        JSONArray configuraciones = new JSONArray(responseConfiguraciones);
+        for (int i = 0; i < configuraciones.length(); i++) {
+            JSONObject configuracion = configuraciones.getJSONObject(i);
+            configuracionIdComboBox.getItems().add(configuracion.getInt("configuracion_id"));
+    }
+
+        grid.add(new Label("Ubicación:"), 0, 0);
+        grid.add(ubicacion, 1, 0);
+        grid.add(new Label("Usuario ID:"), 0, 1);
+        grid.add(usuarioIdComboBox, 1, 1);
+        grid.add(new Label("Configuración ID:"), 0, 2);
+        grid.add(configuracionIdComboBox, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Convert the result to a JSONObject when the add button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                JSONObject newJardin = new JSONObject();
+                newJardin.put("ubicacion", ubicacion.getText());
+                newJardin.put("usuario_id", usuarioIdComboBox.getValue());
+                newJardin.put("configuracion_id", configuracionIdComboBox.getValue());
+                return newJardin;
+            }
+        return null;
+    });
+
+        Optional<JSONObject> result = dialog.showAndWait();
+
+        result.ifPresent(jardin -> {
+            // Call your API to add the garden
+            String responseInsert = apiClient.insertarRegistro("Jardines", jardin.toMap());
+            mostrarAlerta("Resultado", responseInsert);
+    });
+
+    cargarTabla(tablaActual);
     }
 
     private void mostrarFormularioAgregarProducto(){
