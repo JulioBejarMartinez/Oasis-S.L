@@ -29,7 +29,7 @@
             <Font name="Lucida Sans Demibold Italic" size="23.0" />
          </font>
       </Label>
-      <Button id="Agregar" fx:id="facturasButton1" layoutX="528.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #C9DC5C; -fx-border-color: #4F8722;" text="Agregar" />
+      <Button id="Agregar" fx:id="agregarButton" layoutX="528.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #C9DC5C; -fx-border-color: #4F8722;" text="Agregar" />
       <Button fx:id="facturasButton2" layoutX="651.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FDD835; -fx-border-color: #F57F17;" text="Editar" />
       <Button fx:id="facturasButton3" layoutX="772.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #E53935; -fx-border-color: #F57F17;" text="Eliminar" />
    </children>
