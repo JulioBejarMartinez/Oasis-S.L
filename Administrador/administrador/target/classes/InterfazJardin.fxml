@@ -3,12 +3,13 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #BBF4ED;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.InterfazJardinController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: #BBF4ED;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.InterfazJardinController">
    <children>
       <Button fx:id="usuariosButton" layoutX="14.0" layoutY="163.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Usuarios" />
       <Button fx:id="jardinesButton" layoutX="14.0" layoutY="199.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" text="Jardines" />
@@ -21,11 +22,15 @@
             <Image url="@OIG1.jpg" />
          </image>
       </ImageView>
+      <TextField fx:id="searchTextField" layoutX="139.0" layoutY="14.0" prefHeight="26.0" prefWidth="243.0" promptText="Buscar..." style="-fx-background-color: #FFD69E; -fx-border-color: #EDA052;" />
       <TableView fx:id="tableView" layoutX="138.0" layoutY="48.0" prefHeight="344.0" prefWidth="448.0" style="-fx-background-color: #FFD69E;" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="138.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="48.0" />
       <Label layoutX="14.0" layoutY="125.0" prefHeight="30.0" prefWidth="113.0" text="OASIS S.L" textAlignment="CENTER" textOverrun="CENTER_ELLIPSIS">
          <font>
             <Font name="Lucida Sans Demibold Italic" size="23.0" />
          </font>
       </Label>
+      <Button id="Agregar" fx:id="facturasButton1" layoutX="528.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #C9DC5C; -fx-border-color: #4F8722;" text="Agregar" />
+      <Button fx:id="facturasButton2" layoutX="651.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FDD835; -fx-border-color: #F57F17;" text="Editar" />
+      <Button fx:id="facturasButton3" layoutX="772.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #E53935; -fx-border-color: #F57F17;" text="Eliminar" />
    </children>
 </AnchorPane>

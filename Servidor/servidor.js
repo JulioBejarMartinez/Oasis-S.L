@@ -55,7 +55,7 @@ app.get('/tabla/:nombre', (req, res) => {
 // Si quieres construir la consulta para postman, en este caso filtrar usuarios por rol de admin y de fehca seria asi:
 // http://localhost:3000/tabla/usuarios/filtrar?rol=admin&fecha=2021-05-01
 // Endpoint para leer registros de una tabla con filtros dinámicos
-app.get('/tabla/:nombre/filtrar', (req, res) => {
+/*app.get('/tabla/:nombre/filtrar', (req, res) => {
   const nombreTabla = req.params.nombre;
   const tablaEscapada = mysql.escapeId(nombreTabla);
   const filtros = req.query;
@@ -72,6 +72,44 @@ app.get('/tabla/:nombre/filtrar', (req, res) => {
       return res.status(500).json({ error: 'Error al leer los registros de la tabla con filtros.' });
     }
     res.json(results);
+  });
+});*/
+
+app.get('/tabla/:nombre/filtrar', (req, res) => {
+  const nombreTabla = req.params.nombre;
+  const tablaEscapada = mysql.escapeId(nombreTabla);
+  const searchTerm = req.query.search;
+
+  if (!searchTerm) {
+    return res.status(400).json({ error: 'Parámetro de búsqueda requerido.' });
+  }
+
+  // Obtener los nombres de las columnas de la tabla
+  db.query(`DESCRIBE ${tablaEscapada}`, (err, columns) => {
+    if (err) {
+      console.error('Error al obtener columnas:', err);
+      return res.status(500).json({ error: 'Error al obtener estructura de la tabla.' });
+    }
+
+    // Construir condiciones LIKE para todas las columnas de tipo texto
+    const conditions = columns
+      .filter(col => col.Type.includes('char') || col.Type.includes('text'))
+      .map(col => `${mysql.escapeId(col.Field)} LIKE ${mysql.escape(`%${searchTerm}%`)}`)
+      .join(' OR ');
+
+    if (!conditions) {
+      return res.json([]);
+    }
+
+    const query = `SELECT * FROM ${tablaEscapada} WHERE ${conditions}`;
+
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Error al ejecutar la consulta:', err);
+        return res.status(500).json({ error: 'Error al buscar registros.' });
+      }
+      res.json(results);
+    });
   });
 });
 
@@ -148,6 +186,20 @@ app.delete('/tabla/:nombre/:id', (req, res) => {
     res.json({ message: 'Registro borrado exitosamente' });
   });
 });
+
+// Endpoint para obtener estructura de la tabla
+// Toma el nombre de la tabla como parametros.
+
+app.get('/tabla/:nombre/estructura', (req, res) => {
+  const nombreTabla = req.params.nombre;
+  const query = `DESCRIBE ${mysql.escapeId(nombreTabla)}`;
+  
+  db.query(query, (err, results) => {
+      if (err) return res.status(500).json({ error: "Error al obtener estructura" });
+      res.json(results);
+  });
+});
+
 
 // Iniciar el servidor
 app.listen(port, () => {

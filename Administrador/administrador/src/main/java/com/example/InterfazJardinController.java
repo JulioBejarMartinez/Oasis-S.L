@@ -64,6 +64,10 @@ public class InterfazJardinController {
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
+    // Funcion encargada de cargar cada una de las tablas de la BBDD
+    // Cada uno de los botones de la interfaz llama a esta funcion con el nombre de la tabla
+    // La tabla se carga con los registros de la tabla de la BBDD
+
     private void cargarTabla(String nombreTabla) {
         if (isLoading) {
             return; // Prevent multiple simultaneous loads
@@ -116,6 +120,9 @@ public class InterfazJardinController {
         isLoading = false;
     }
 
+    // Funcion encargada de mostrar una alerta en la interfaz
+    // Recibe un titulo y un mensaje que se mostraran en la alerta
+    // La alerta se muestra y espera a que el usuario la cierre
     private void mostrarAlerta(String titulo, String mensaje) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle(titulo);
