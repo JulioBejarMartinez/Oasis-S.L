@@ -459,13 +459,143 @@ public class InterfazJardinController {
         cargarTabla(tablaActual);
     }
 
-    private void mostrarFormularioAgregarFactura(){
-
+    private void mostrarFormularioAgregarFactura() {
+        Dialog<JSONObject> dialog = new Dialog<>();
+        dialog.setTitle("Agregar Factura");
+    
+        // Set the button types
+        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+    
+        // Create the labels and fields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+    
+        TextField montoTotal = new TextField();
+        montoTotal.setPromptText("Monto Total");
+    
+        ComboBox<String> estadoComboBox = new ComboBox<>();
+        estadoComboBox.getItems().addAll("pendiente", "pagada", "cancelada");
+        estadoComboBox.setPromptText("Estado");
+    
+        ComboBox<Integer> usuarioIdComboBox = new ComboBox<>();
+        usuarioIdComboBox.setPromptText("Usuario ID");
+    
+        // Fetch user IDs from the API and populate the ComboBox
+        String responseUsuarios = apiClient.getRegistros("Usuarios");
+        JSONArray usuarios = new JSONArray(responseUsuarios);
+        for (int i = 0; i < usuarios.length(); i++) {
+            JSONObject usuario = usuarios.getJSONObject(i);
+            usuarioIdComboBox.getItems().add(usuario.getInt("usuario_id"));
+        }
+    
+        grid.add(new Label("Monto Total:"), 0, 0);
+        grid.add(montoTotal, 1, 0);
+        grid.add(new Label("Estado:"), 0, 1);
+        grid.add(estadoComboBox, 1, 1);
+        grid.add(new Label("Usuario ID:"), 0, 2);
+        grid.add(usuarioIdComboBox, 1, 2);
+    
+        dialog.getDialogPane().setContent(grid);
+    
+        // Convert the result to a JSONObject when the add button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                JSONObject newFactura = new JSONObject();
+                newFactura.put("fecha_emision", LocalDateTime.now().toString());
+                newFactura.put("monto_total", Double.parseDouble(montoTotal.getText()));
+                newFactura.put("estado", estadoComboBox.getValue());
+                newFactura.put("usuario_id", usuarioIdComboBox.getValue());
+                return newFactura;
+            }
+            return null;
+        });
+    
+        Optional<JSONObject> result = dialog.showAndWait();
+    
+        result.ifPresent(factura -> {
+            // Call your API to add the invoice
+            String responseInsert = apiClient.insertarRegistro("Facturas", factura.toMap());
+            mostrarAlerta("Resultado", responseInsert);
+        });
+    
+        cargarTabla(tablaActual);
     }
 
     
-    private void mostrarFormularioAgregarConfiguracion(){
-
+    private void mostrarFormularioAgregarConfiguracion() {
+        Dialog<JSONObject> dialog = new Dialog<>();
+        dialog.setTitle("Agregar Configuración");
+    
+        // Set the button types
+        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+    
+        // Create the labels and fields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+    
+        TextField tempMin = new TextField();
+        tempMin.setPromptText("Temperatura Mínima");
+        TextField tempMax = new TextField();
+        tempMax.setPromptText("Temperatura Máxima");
+        TextField humedadAmbMin = new TextField();
+        humedadAmbMin.setPromptText("Humedad Ambiente Mínima");
+        TextField humedadAmbMax = new TextField();
+        humedadAmbMax.setPromptText("Humedad Ambiente Máxima");
+        TextField humedadSueloMin = new TextField();
+        humedadSueloMin.setPromptText("Humedad Suelo Mínima");
+        TextField humedadSueloMax = new TextField();
+        humedadSueloMax.setPromptText("Humedad Suelo Máxima");
+        TextField nivelAguaMin = new TextField();
+        nivelAguaMin.setPromptText("Nivel Agua Mínimo");
+    
+        grid.add(new Label("Temperatura Mínima:"), 0, 0);
+        grid.add(tempMin, 1, 0);
+        grid.add(new Label("Temperatura Máxima:"), 0, 1);
+        grid.add(tempMax, 1, 1);
+        grid.add(new Label("Humedad Ambiente Mínima:"), 0, 2);
+        grid.add(humedadAmbMin, 1, 2);
+        grid.add(new Label("Humedad Ambiente Máxima:"), 0, 3);
+        grid.add(humedadAmbMax, 1, 3);
+        grid.add(new Label("Humedad Suelo Mínima:"), 0, 4);
+        grid.add(humedadSueloMin, 1, 4);
+        grid.add(new Label("Humedad Suelo Máxima:"), 0, 5);
+        grid.add(humedadSueloMax, 1, 5);
+        grid.add(new Label("Nivel Agua Mínimo:"), 0, 6);
+        grid.add(nivelAguaMin, 1, 6);
+    
+        dialog.getDialogPane().setContent(grid);
+    
+        // Convert the result to a JSONObject when the add button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                JSONObject newConfiguracion = new JSONObject();
+                newConfiguracion.put("temp_min", tempMin.getText());
+                newConfiguracion.put("temp_max", tempMax.getText());
+                newConfiguracion.put("humedad_amb_min", humedadAmbMin.getText());
+                newConfiguracion.put("humedad_amb_max", humedadAmbMax.getText());
+                newConfiguracion.put("humedad_suelo_min", humedadSueloMin.getText());
+                newConfiguracion.put("humedad_suelo_max", humedadSueloMax.getText());
+                newConfiguracion.put("nivel_agua_min", nivelAguaMin.getText());
+                return newConfiguracion;
+            }
+            return null;
+        });
+    
+        Optional<JSONObject> result = dialog.showAndWait();
+    
+        result.ifPresent(configuracion -> {
+            // Call your API to add the configuration
+            String responseInsert = apiClient.insertarRegistro("Configuraciones", configuracion.toMap());
+            mostrarAlerta("Resultado", responseInsert);
+        });
+    
+        cargarTabla(tablaActual);
     }
 
     // Funcion encargada de mostrar una alerta en la interfaz
