@@ -399,14 +399,71 @@ public class InterfazJardinController {
     cargarTabla(tablaActual);
     }
 
+    private void mostrarFormularioAgregarPlanta() {
+        Dialog<JSONObject> dialog = new Dialog<>();
+        dialog.setTitle("Agregar Planta");
+    
+        // Set the button types
+        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+    
+        // Create the labels and fields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+    
+        ComboBox<Integer> productoIdComboBox = new ComboBox<>();
+        productoIdComboBox.setPromptText("Producto ID");
+    
+        ComboBox<String> estadoComboBox = new ComboBox<>();
+        estadoComboBox.getItems().addAll("Viva", "Muerta");
+        estadoComboBox.setPromptText("Estado");
+    
+        // Fetch product IDs from the API and populate the ComboBox with only "planta" type products
+        String responseProductos = apiClient.getRegistros("Productos");
+        JSONArray productos = new JSONArray(responseProductos);
+        for (int i = 0; i < productos.length(); i++) {
+            JSONObject producto = productos.getJSONObject(i);
+            if ("planta".equals(producto.getString("tipo_producto"))) {
+                productoIdComboBox.getItems().add(producto.getInt("producto_id"));
+            }
+        }
+    
+        grid.add(new Label("Producto ID:"), 0, 0);
+        grid.add(productoIdComboBox, 1, 0);
+        grid.add(new Label("Estado:"), 0, 1);
+        grid.add(estadoComboBox, 1, 1);
+    
+        dialog.getDialogPane().setContent(grid);
+    
+        // Convert the result to a JSONObject when the add button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                JSONObject newPlanta = new JSONObject();
+                newPlanta.put("producto_id", productoIdComboBox.getValue());
+                newPlanta.put("estado", estadoComboBox.getValue());
+                return newPlanta;
+            }
+            return null;
+        });
+    
+        Optional<JSONObject> result = dialog.showAndWait();
+    
+        result.ifPresent(planta -> {
+            // Call your API to add the plant
+            String responseInsert = apiClient.insertarRegistro("Plantas", planta.toMap());
+            mostrarAlerta("Resultado", responseInsert);
+        });
+    
+        cargarTabla(tablaActual);
+    }
+
     private void mostrarFormularioAgregarFactura(){
 
     }
 
-    private void mostrarFormularioAgregarPlanta(){
-
-    }
-
+    
     private void mostrarFormularioAgregarConfiguracion(){
 
     }
