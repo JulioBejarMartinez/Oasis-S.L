@@ -58,6 +58,9 @@ public class InterfazJardinController {
     private Button agregarButton;
 
     @FXML
+    private Button editarButton;
+
+    @FXML
     private TableView<JSONObject> tableView;
 
     private ApiClient apiClient;
@@ -76,8 +79,16 @@ public class InterfazJardinController {
         facturasButton.setOnAction(event -> cargarTabla("Facturas"));
         plantasButton.setOnAction(event -> cargarTabla("Plantas"));
         configuracionesButton.setOnAction(event -> cargarTabla("Configuraciones"));
-        agregarButton.setOnAction(event -> mostrarFormularioAgregar());
-        
+        agregarButton.setOnAction(event -> mostrarFormularioAgregar("agregar", null));
+        editarButton.setOnAction(event -> {
+            JSONObject selectedItem = tableView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null) {
+                mostrarFormularioAgregar("editar", selectedItem);
+            } else {
+                mostrarAlerta("Error", "No se ha seleccionado ningún registro para editar.");
+            }
+        });
+
         // Apply styles to the TableView
         tableView.setStyle("-fx-background-color: #FFD69E; -fx-border-color: #EDA052;");
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -147,7 +158,7 @@ public class InterfazJardinController {
     // Funcion encargada de mostrar el formulario para agregar un registro a la tabla actual
     // Se comprueba el nombre de la tabla actual y se llama a la funcion correspondiente
 
-    private void mostrarFormularioAgregar() {
+    private void mostrarFormularioAgregar(String tipoFormulario, JSONObject registroExistente) {
         // Comprueba si se ha seleccionado una tabla
             if(tablaActual == null){
                 mostrarAlerta("Error", "No se ha seleccionado ninguna tabla.");
@@ -155,7 +166,7 @@ public class InterfazJardinController {
             }
             switch(tablaActual.toLowerCase()){
                 case "usuarios":
-                    mostrarFormularioAgregarUsuario();
+                    mostrarFormularioAgregarUsuario(tipoFormulario, registroExistente);
                     break;
                 case "jardines":
                     mostrarFormularioAgregarJardin();
@@ -190,14 +201,13 @@ public class InterfazJardinController {
     //Funcion para mostrar el formulario de agregar un usuario
     //Se muestra un dialogo con los campos necesarios para agregar un usuario
     //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
-    private void mostrarFormularioAgregarUsuario(){
-
+    private void mostrarFormularioAgregarUsuario(String tipoFormulario, JSONObject registroExistente) {
         Dialog<JSONObject> dialog = new Dialog<>();
-        dialog.setTitle("Agregar Usuario");
+        dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Usuario" : "Editar Usuario");
 
         // Set the button types
-        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+        ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
 
         // Create the username and email labels and fields
         GridPane grid = new GridPane();
@@ -215,6 +225,13 @@ public class InterfazJardinController {
         rol.getItems().addAll("cliente", "admin");
         rol.setPromptText("Rol");
 
+        if (registroExistente != null) {
+            nombre.setText(registroExistente.optString("nombre"));
+            email.setText(registroExistente.optString("email"));
+            password.setText(registroExistente.optString("contraseña_hash"));
+            rol.setValue(registroExistente.optString("rol"));
+        }
+
         grid.add(new Label("Nombre:"), 0, 0);
         grid.add(nombre, 1, 0);
         grid.add(new Label("Email:"), 0, 1);
@@ -226,29 +243,35 @@ public class InterfazJardinController {
 
         dialog.getDialogPane().setContent(grid);
 
-        // Convierte el resultado a un JSONObject cuando se hace clic en el botón Agregar.
+        // Convierte el resultado a un JSONObject cuando se hace clic en el botón Agregar o Guardar.
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
+            if (dialogButton == actionButtonType) {
                 JSONObject newUser = new JSONObject();
                 newUser.put("nombre", nombre.getText());
                 newUser.put("email", email.getText());
                 newUser.put("contraseña_hash", password.getText());
                 newUser.put("rol", rol.getValue());
                 newUser.put("fecha_registro", LocalDateTime.now().toString());
-            return newUser;
+                return newUser;
             }
-        return null;
-    });
+            return null;
+        });
 
-    Optional<JSONObject> result = dialog.showAndWait();
+        Optional<JSONObject> result = dialog.showAndWait();
 
-    result.ifPresent(user -> {
-        // LLamo a la Api para hacer la inserción del usuario
-        String response = apiClient.insertarRegistro("Usuarios", user.toMap());
-        mostrarAlerta("Resultado", response);
-    });
+        result.ifPresent(user -> {
+            if (tipoFormulario.equals("agregar")) {
+                // LLamo a la Api para hacer la inserción del usuario
+                String response = apiClient.insertarRegistro("Usuarios", user.toMap());
+                mostrarAlerta("Resultado", response);
+            } else {
+                // LLamo a la Api para hacer la actualización del usuario
+                String response = apiClient.actualizarRegistro("Usuarios", "usuario_id", String.valueOf(registroExistente.getInt("usuario_id")), user.toMap());
+                mostrarAlerta("Resultado", response);
+            }
+        });
 
-    cargarTabla(tablaActual);
+        cargarTabla(tablaActual);
     }
 
 

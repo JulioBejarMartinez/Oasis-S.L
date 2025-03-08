@@ -30,7 +30,7 @@
          </font>
       </Label>
       <Button id="Agregar" fx:id="agregarButton" layoutX="528.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #C9DC5C; -fx-border-color: #4F8722;" text="Agregar" />
-      <Button fx:id="facturasButton2" layoutX="651.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FDD835; -fx-border-color: #F57F17;" text="Editar" />
-      <Button fx:id="facturasButton3" layoutX="772.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #E53935; -fx-border-color: #F57F17;" text="Eliminar" />
+      <Button fx:id="editarButton" layoutX="651.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #FDD835; -fx-border-color: #F57F17;" text="Editar" />
+      <Button fx:id="borrarButton" layoutX="772.0" layoutY="12.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="113.0" style="-fx-background-color: #E53935; -fx-border-color: #F57F17;" text="Eliminar" />
    </children>
 </AnchorPane>
