@@ -172,7 +172,7 @@ public class InterfazJardinController {
                     mostrarFormularioAgregarJardin(tipoFormulario, registroExistente);
                     break;
                 case "productos":
-                    mostrarFormularioAgregarProducto();
+                    mostrarFormularioAgregarProducto(tipoFormulario, registroExistente);
                     break;
                 case "facturas":
                     mostrarFormularioAgregarFactura();
@@ -365,72 +365,86 @@ public class InterfazJardinController {
     //Funcion para mostrar el formulario de agregar un producto
     //Se muestra un dialogo con los campos necesarios para agregar un producto
     //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
-    private void mostrarFormularioAgregarProducto(){
+    private void mostrarFormularioAgregarProducto(String tipoFormulario, JSONObject registroExistente) {
         Dialog<JSONObject> dialog = new Dialog<>();
-    dialog.setTitle("Agregar Producto");
-
-    // Set the button types
-    ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-    dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
-
-    // Create the labels and fields
-    GridPane grid = new GridPane();
-    grid.setHgap(10);
-    grid.setVgap(10);
-    grid.setPadding(new Insets(20, 150, 10, 10));
-
-    TextField nombre = new TextField();
-    nombre.setPromptText("Nombre");
-
-    TextField descripcion = new TextField();
-    descripcion.setPromptText("Descripción");
-
-    TextField precio = new TextField();
-    precio.setPromptText("Precio");
-
-    TextField stock = new TextField();
-    stock.setPromptText("Stock");
-
-    ComboBox<String> tipoProductoComboBox = new ComboBox<>();
-    tipoProductoComboBox.getItems().addAll("articulo", "planta");
-    tipoProductoComboBox.setPromptText("Tipo de Producto");
-
-    grid.add(new Label("Nombre:"), 0, 0);
-    grid.add(nombre, 1, 0);
-    grid.add(new Label("Descripción:"), 0, 1);
-    grid.add(descripcion, 1, 1);
-    grid.add(new Label("Precio:"), 0, 2);
-    grid.add(precio, 1, 2);
-    grid.add(new Label("Stock:"), 0, 3);
-    grid.add(stock, 1, 3);
-    grid.add(new Label("Tipo de Producto:"), 0, 4);
-    grid.add(tipoProductoComboBox, 1, 4);
-
-    dialog.getDialogPane().setContent(grid);
-
-    // Convert the result to a JSONObject when the add button is clicked.
-    dialog.setResultConverter(dialogButton -> {
-        if (dialogButton == addButtonType) {
-            JSONObject newProducto = new JSONObject();
-            newProducto.put("nombre", nombre.getText());
-            newProducto.put("descripcion", descripcion.getText());
-            newProducto.put("precio", Double.parseDouble(precio.getText()));
-            newProducto.put("stock", Integer.parseInt(stock.getText()));
-            newProducto.put("tipo_producto", tipoProductoComboBox.getValue());
-            return newProducto;
+        dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Producto" : "Editar Producto");
+    
+        // Set the button types
+        ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
+    
+        // Create the labels and fields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+    
+        TextField nombre = new TextField();
+        nombre.setPromptText("Nombre");
+    
+        TextField descripcion = new TextField();
+        descripcion.setPromptText("Descripción");
+    
+        TextField precio = new TextField();
+        precio.setPromptText("Precio");
+    
+        TextField stock = new TextField();
+        stock.setPromptText("Stock");
+    
+        ComboBox<String> tipoProductoComboBox = new ComboBox<>();
+        tipoProductoComboBox.getItems().addAll("articulo", "planta");
+        tipoProductoComboBox.setPromptText("Tipo de Producto");
+    
+        if (registroExistente != null) {
+            nombre.setText(registroExistente.optString("nombre"));
+            descripcion.setText(registroExistente.optString("descripcion"));
+            precio.setText(String.valueOf(registroExistente.optDouble("precio")));
+            stock.setText(String.valueOf(registroExistente.optInt("stock")));
+            tipoProductoComboBox.setValue(registroExistente.optString("tipo_producto"));
         }
-        return null;
-    });
-
-    Optional<JSONObject> result = dialog.showAndWait();
-
-    result.ifPresent(producto -> {
-        // Call your API to add the product
-        String responseInsert = apiClient.insertarRegistro("Productos", producto.toMap());
-        mostrarAlerta("Resultado", responseInsert);
-    });
-
-    cargarTabla(tablaActual);
+    
+        grid.add(new Label("Nombre:"), 0, 0);
+        grid.add(nombre, 1, 0);
+        grid.add(new Label("Descripción:"), 0, 1);
+        grid.add(descripcion, 1, 1);
+        grid.add(new Label("Precio:"), 0, 2);
+        grid.add(precio, 1, 2);
+        grid.add(new Label("Stock:"), 0, 3);
+        grid.add(stock, 1, 3);
+        grid.add(new Label("Tipo de Producto:"), 0, 4);
+        grid.add(tipoProductoComboBox, 1, 4);
+    
+        dialog.getDialogPane().setContent(grid);
+    
+        // Convert the result to a JSONObject when the add button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == actionButtonType) {
+                JSONObject newProducto = new JSONObject();
+                newProducto.put("nombre", nombre.getText());
+                newProducto.put("descripcion", descripcion.getText());
+                newProducto.put("precio", Double.parseDouble(precio.getText()));
+                newProducto.put("stock", Integer.parseInt(stock.getText()));
+                newProducto.put("tipo_producto", tipoProductoComboBox.getValue());
+                return newProducto;
+            }
+            return null;
+        });
+    
+        Optional<JSONObject> result = dialog.showAndWait();
+    
+        result.ifPresent(producto -> {
+            if (tipoFormulario.equals("agregar")) {
+                // Call your API to add the product
+                String responseInsert = apiClient.insertarRegistro("Productos", producto.toMap());
+                mostrarAlerta("Resultado", responseInsert);
+            } else {
+                // Call your API to update the product
+                String responseUpdate = apiClient.actualizarRegistro("Productos", "producto_id", String.valueOf(registroExistente.getInt("producto_id")), producto.toMap());
+                mostrarAlerta("Resultado", responseUpdate);
+            }
+        });
+    
+        cargarTabla(tablaActual);
     }
 
     private void mostrarFormularioAgregarPlanta() {
