@@ -169,7 +169,7 @@ public class InterfazJardinController {
                     mostrarFormularioAgregarUsuario(tipoFormulario, registroExistente);
                     break;
                 case "jardines":
-                    mostrarFormularioAgregarJardin();
+                    mostrarFormularioAgregarJardin(tipoFormulario, registroExistente);
                     break;
                 case "productos":
                     mostrarFormularioAgregarProducto();
@@ -205,11 +205,11 @@ public class InterfazJardinController {
         Dialog<JSONObject> dialog = new Dialog<>();
         dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Usuario" : "Editar Usuario");
 
-        // Set the button types
+        // Se crean los botones
         ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
 
-        // Create the username and email labels and fields
+        // Se crean los campos que el usuario debe rellenar
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -278,76 +278,87 @@ public class InterfazJardinController {
     //Funcion para mostrar el formulario de agregar un jardin
     //Se muestra un dialogo con los campos necesarios para agregar un jardin
     //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
-    private void mostrarFormularioAgregarJardin(){
-
+    private void mostrarFormularioAgregarJardin(String tipoFormulario, JSONObject registroExistente) {
         Dialog<JSONObject> dialog = new Dialog<>();
-        dialog.setTitle("Agregar Jardín");
-
+        dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Jardín" : "Editar Jardín");
+    
         // Set the button types
-        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
-
+        ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
+    
         // Create the labels and fields
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
-
+    
         TextField ubicacion = new TextField();
         ubicacion.setPromptText("Ubicación");
-
+    
         ComboBox<Integer> usuarioIdComboBox = new ComboBox<>();
         usuarioIdComboBox.setPromptText("Usuario ID");
-
+    
         ComboBox<Integer> configuracionIdComboBox = new ComboBox<>();
         configuracionIdComboBox.setPromptText("Configuración ID");
-
+    
         // Fetch user IDs from the API and populate the ComboBox
         String responseUsuarios = apiClient.getRegistros("Usuarios");
         JSONArray usuarios = new JSONArray(responseUsuarios);
         for (int i = 0; i < usuarios.length(); i++) {
             JSONObject usuario = usuarios.getJSONObject(i);
             usuarioIdComboBox.getItems().add(usuario.getInt("usuario_id"));
-    }
-
+        }
+    
         // Fetch configuration IDs from the API and populate the ComboBox
         String responseConfiguraciones = apiClient.getRegistros("Configuraciones");
         JSONArray configuraciones = new JSONArray(responseConfiguraciones);
         for (int i = 0; i < configuraciones.length(); i++) {
             JSONObject configuracion = configuraciones.getJSONObject(i);
             configuracionIdComboBox.getItems().add(configuracion.getInt("configuracion_id"));
-    }
-
+        }
+    
+        if (registroExistente != null) {
+            ubicacion.setText(registroExistente.optString("ubicacion"));
+            usuarioIdComboBox.setValue(registroExistente.optInt("usuario_id"));
+            configuracionIdComboBox.setValue(registroExistente.optInt("configuracion_id"));
+        }
+    
         grid.add(new Label("Ubicación:"), 0, 0);
         grid.add(ubicacion, 1, 0);
         grid.add(new Label("Usuario ID:"), 0, 1);
         grid.add(usuarioIdComboBox, 1, 1);
         grid.add(new Label("Configuración ID:"), 0, 2);
         grid.add(configuracionIdComboBox, 1, 2);
-
+    
         dialog.getDialogPane().setContent(grid);
-
+    
         // Convert the result to a JSONObject when the add button is clicked.
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
+            if (dialogButton == actionButtonType) {
                 JSONObject newJardin = new JSONObject();
                 newJardin.put("ubicacion", ubicacion.getText());
                 newJardin.put("usuario_id", usuarioIdComboBox.getValue());
                 newJardin.put("configuracion_id", configuracionIdComboBox.getValue());
                 return newJardin;
             }
-        return null;
-    });
-
+            return null;
+        });
+    
         Optional<JSONObject> result = dialog.showAndWait();
-
+    
         result.ifPresent(jardin -> {
-            // Call your API to add the garden
-            String responseInsert = apiClient.insertarRegistro("Jardines", jardin.toMap());
-            mostrarAlerta("Resultado", responseInsert);
-    });
-
-    cargarTabla(tablaActual);
+            if (tipoFormulario.equals("agregar")) {
+                // Call your API to add the garden
+                String responseInsert = apiClient.insertarRegistro("Jardines", jardin.toMap());
+                mostrarAlerta("Resultado", responseInsert);
+            } else {
+                // Call your API to update the garden
+                String responseUpdate = apiClient.actualizarRegistro("Jardines", "jardin_id", String.valueOf(registroExistente.getInt("jardin_id")), jardin.toMap());
+                mostrarAlerta("Resultado", responseUpdate);
+            }
+        });
+    
+        cargarTabla(tablaActual);
     }
 
 
