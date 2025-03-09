@@ -115,6 +115,9 @@ public class ApiClient {
         return response;
     }
 
+    // Metodo para borrar un registro en una tabla
+    // Recibe el nombre de la tabla, el id del registro y el nombre de la columna id
+    // Retorna un string con la respuesta del servidor
     public String borrarRegistro(String nombreTabla, String idColumna, String id) {
         String response = "";
         try {
