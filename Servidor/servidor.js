@@ -1,11 +1,19 @@
 import express from 'express';
 import mysql from 'mysql';
+import cors from 'cors';
+import bcrypt from 'bcrypt';
 
 const app = express();
 const port = 3000;
 
 // Middleware para parsear JSON
 app.use(express.json());
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 const db = mysql.createConnection({
     host: 'dam2.colexio-karbo.com',
@@ -30,6 +38,16 @@ app.get('/', (req, res) => {
   res.send('¡Hola, mundo!');
 });
 
+//
+//
+//
+//
+// Endpoints para MYSQL
+//
+//
+//
+//        
+//
 // Endpoint reutilizable para leer todos los registros de cualquier tabla
 // Toma el nombre de la tabla como parametros.
 app.get('/tabla/:nombre', (req, res) => {
@@ -50,30 +68,6 @@ app.get('/tabla/:nombre', (req, res) => {
     res.json(results);
   });
 });
-
-// Endpoint reutilizable para leer un registro de cualquier tabla
-// Si quieres construir la consulta para postman, en este caso filtrar usuarios por rol de admin y de fehca seria asi:
-// http://localhost:3000/tabla/usuarios/filtrar?rol=admin&fecha=2021-05-01
-// Endpoint para leer registros de una tabla con filtros dinámicos
-/*app.get('/tabla/:nombre/filtrar', (req, res) => {
-  const nombreTabla = req.params.nombre;
-  const tablaEscapada = mysql.escapeId(nombreTabla);
-  const filtros = req.query;
-
-  let query = `SELECT * FROM ${tablaEscapada} WHERE 1=1`;
-
-  for (const [campo, valor] of Object.entries(filtros)) {
-    query += ` AND ${mysql.escapeId(campo)} = ${mysql.escape(valor)}`;
-  }
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error al ejecutar la consulta:', err);
-      return res.status(500).json({ error: 'Error al leer los registros de la tabla con filtros.' });
-    }
-    res.json(results);
-  });
-});*/
 
 app.get('/tabla/:nombre/filtrar', (req, res) => {
   const nombreTabla = req.params.nombre;
@@ -189,7 +183,6 @@ app.delete('/tabla/:nombre/:id', (req, res) => {
 
 // Endpoint para obtener estructura de la tabla
 // Toma el nombre de la tabla como parametros.
-
 app.get('/tabla/:nombre/estructura', (req, res) => {
   const nombreTabla = req.params.nombre;
   const query = `DESCRIBE ${mysql.escapeId(nombreTabla)}`;
@@ -199,8 +192,7 @@ app.get('/tabla/:nombre/estructura', (req, res) => {
       res.json(results);
   });
 });
-
-
+ 
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
