@@ -181,7 +181,7 @@ public class InterfazJardinController {
                     mostrarFormularioAgregarPlanta(tipoFormulario, registroExistente);
                     break;
                 case "configuraciones":
-                    mostrarFormularioAgregarConfiguracion();
+                    mostrarFormularioAgregarConfiguracion(tipoFormulario, registroExistente);
                     break;
                 default:
                     mostrarAlerta("Error", "No se ha seleccionado ninguna tabla.");
@@ -623,14 +623,16 @@ public class InterfazJardinController {
         cargarTabla(tablaActual);
     }
 
-    
-    private void mostrarFormularioAgregarConfiguracion() {
+    // Funcion para mostrar el formulario de agregar una configuracion
+    // Se muestra un dialogo con los campos necesarios para agregar una configuracion
+    // Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
+    private void mostrarFormularioAgregarConfiguracion(String tipoFormulario, JSONObject registroExistente) {
         Dialog<JSONObject> dialog = new Dialog<>();
-        dialog.setTitle("Agregar Configuración");
+        dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Configuración" : "Editar Configuración");
     
         // Set the button types
-        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+        ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
     
         // Create the labels and fields
         GridPane grid = new GridPane();
@@ -653,6 +655,16 @@ public class InterfazJardinController {
         TextField nivelAguaMin = new TextField();
         nivelAguaMin.setPromptText("Nivel Agua Mínimo");
     
+        if (registroExistente != null) {
+            tempMin.setText(registroExistente.optString("temp_min"));
+            tempMax.setText(registroExistente.optString("temp_max"));
+            humedadAmbMin.setText(registroExistente.optString("humedad_amb_min"));
+            humedadAmbMax.setText(registroExistente.optString("humedad_amb_max"));
+            humedadSueloMin.setText(registroExistente.optString("humedad_suelo_min"));
+            humedadSueloMax.setText(registroExistente.optString("humedad_suelo_max"));
+            nivelAguaMin.setText(registroExistente.optString("nivel_agua_min"));
+        }
+    
         grid.add(new Label("Temperatura Mínima:"), 0, 0);
         grid.add(tempMin, 1, 0);
         grid.add(new Label("Temperatura Máxima:"), 0, 1);
@@ -672,7 +684,7 @@ public class InterfazJardinController {
     
         // Convert the result to a JSONObject when the add button is clicked.
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
+            if (dialogButton == actionButtonType) {
                 JSONObject newConfiguracion = new JSONObject();
                 newConfiguracion.put("temp_min", tempMin.getText());
                 newConfiguracion.put("temp_max", tempMax.getText());
@@ -689,9 +701,15 @@ public class InterfazJardinController {
         Optional<JSONObject> result = dialog.showAndWait();
     
         result.ifPresent(configuracion -> {
-            // Call your API to add the configuration
-            String responseInsert = apiClient.insertarRegistro("Configuraciones", configuracion.toMap());
-            mostrarAlerta("Resultado", responseInsert);
+            if (tipoFormulario.equals("agregar")) {
+                // Call your API to add the configuration
+                String responseInsert = apiClient.insertarRegistro("Configuraciones", configuracion.toMap());
+                mostrarAlerta("Resultado", responseInsert);
+            } else {
+                // Call your API to update the configuration
+                String responseUpdate = apiClient.actualizarRegistro("Configuraciones", "configuracion_id", String.valueOf(registroExistente.getInt("configuracion_id")), configuracion.toMap());
+                mostrarAlerta("Resultado", responseUpdate);
+            }
         });
     
         cargarTabla(tablaActual);
