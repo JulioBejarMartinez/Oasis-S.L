@@ -1,7 +1,10 @@
 import express from 'express';
 import mysql from 'mysql';
 import cors from 'cors';
+import { initializeApp } from "firebase/app";
 import bcrypt from 'bcrypt';
+import { getFirestore, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+
 
 const app = express();
 const port = 3000;
@@ -23,6 +26,18 @@ const db = mysql.createConnection({
     database: "jardin_jbejarmartinez"
 })
 
+const firebaseConfig = {
+  apiKey: "AIzaSyBNLWPclcVeFvhjpHBhPubqzktGj5RUB_8",
+  authDomain: "oasi-75be2.firebaseapp.com",
+  projectId: "oasi-75be2",
+  storageBucket: "oasi-75be2.firebasestorage.app",
+  messagingSenderId: "159674993109",
+  appId: "1:159674993109:web:93a7cbb5a7f874e59f555c"
+};
+
+
+const firebaseApp = initializeApp(firebaseConfig);
+const firestore = getFirestore(firebaseApp);
 // Conexión a la BBDD (Comprobacion)
 
 db.connect((err) => {
@@ -33,6 +48,71 @@ db.connect((err) => {
   console.log('¡Conexión a la BBDD exitosa!');
 });
 
+
+// ==================== FUNCIONES DE SINCRONIZACIÓN ====================
+
+const syncFirebase = {
+  Usuarios: {
+    insert: async (id, data) => {
+      await setDoc(doc(firestore, "users", id.toString()), {
+        nombre: data.nombre,
+        email: data.email,
+        rol: data.rol,
+        fecha_registro: new Date().toISOString()
+      });
+    },
+    update: async (id, data) => {
+      const userRef = doc(firestore, "users", id.toString());
+      await updateDoc(userRef, data);
+    },
+    delete: async (id) => {
+      await deleteDoc(doc(firestore, "users", id.toString()));
+    }
+  },
+  
+  Jardines: {
+    insert: async (id, data) => {
+      const gardenRef = doc(firestore, `users/${data.usuario_id}/gardens`, id.toString());
+      await setDoc(gardenRef, {
+        ubicacion: data.ubicacion,
+        configuracion_id: data.configuracion_id,
+        estado_riego: 'noregado'
+      });
+    },
+    update: async (id, data) => {
+      const gardenRef = doc(firestore, `users/${data.usuario_id}/gardens`, id.toString());
+      await updateDoc(gardenRef, data);
+    },
+    delete: async (id, usuario_id) => {
+      await deleteDoc(doc(firestore, `users/${usuario_id}/gardens`, id.toString()));
+    }
+  },
+
+  Productos: {
+    insert: async (id, data) => {
+      if(data.tipo_producto === 'planta') {
+        const plantaRef = doc(firestore, "products/plants", id.toString());
+        await setDoc(plantaRef, {
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+          precio: data.precio
+        });
+      } else {
+        const articuloRef = doc(firestore, "products/tools", id.toString());
+        await setDoc(articuloRef, {
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+          precio: data.precio
+        });
+      }
+    },
+    delete: async (id, tipo) => {
+      const collection = tipo === 'planta' ? 'plants' : 'tools';
+      await deleteDoc(doc(firestore, `products/${collection}`, id.toString()));
+    }
+  }
+};
+
 // Ruta principal
 app.get('/', (req, res) => {
   res.send('¡Hola, mundo!');
@@ -42,7 +122,7 @@ app.get('/', (req, res) => {
 //
 //
 //
-// Endpoints para MYSQL
+// Endpoints para MYSQL (Aplicacion de administrador)
 //
 //
 //
@@ -116,7 +196,7 @@ app.get('/tabla/:nombre/filtrar', (req, res) => {
 //   "apellido": "Pérez",
 //   "edad": 25
 // }
-app.post('/tabla/:nombre', (req, res) => {
+app.post('/tabla/:nombre', async (req, res) => {
   const nombreTabla = req.params.nombre;
   const tablaEscapada = mysql.escapeId(nombreTabla);
   const datos = req.body;
@@ -126,60 +206,123 @@ app.post('/tabla/:nombre', (req, res) => {
 
   const query = `INSERT INTO ${tablaEscapada} (${campos}) VALUES (${valores})`;
 
-  db.query(query, (err, results) => {
+  db.query(query, async (err, results) => {
     if (err) {
       console.error('Error al ejecutar la inserción:', err);
-      return res.status(500).json({ error: 'Error al insertar los registros en la tabla.' });
+      return res.status(500).json({ error: 'Error al insertar el registro' });
     }
-    res.json({ message: 'Registro insertado exitosamente', id: results.insertId });
+    
+    try {
+      if(syncFirebase[nombreTabla]?.insert) {
+        await syncFirebase[nombreTabla].insert(results.insertId, datos);
+      }
+      res.json({ 
+        message: 'Registro insertado exitosamente', 
+        id: results.insertId,
+        firebase: `Registro sincronizado en Firebase`
+      });
+    } catch (firebaseError) {
+      console.error('Error Firebase:', firebaseError);
+      res.status(500).json({ 
+        error: 'Registro creado en MySQL pero falló en Firebase',
+        mysqlId: results.insertId
+      });
+    }
   });
 });
-
 // Endpoint para actualizar registros en cualquier tabla
 // Toma el nombre de la tabla como parametros.
 // El ID del registro a actualizar debe enviarse en la URL.
 // Todos los campos y valores a actualizar deben enviarse en el cuerpo de la petición.
 // Endpoint para actualizar registros en cualquier tabla
-app.put('/tabla/:nombre/:id', (req, res) => {
+app.put('/tabla/:nombre/:id', async (req, res) => {
   const nombreTabla = req.params.nombre;
   const id = req.params.id;
-  const idColumna = req.query.idColumna || 'id'; // Nombre de la columna de identificación, por defecto 'id'
+  const idColumna = req.query.idColumna || 'id';
   const tablaEscapada = mysql.escapeId(nombreTabla);
   const datos = req.body;
 
-  const updates = Object.keys(datos).map(campo => `${mysql.escapeId(campo)} = ${mysql.escape(datos[campo])}`).join(', ');
+  const updates = Object.keys(datos).map(campo => 
+    `${mysql.escapeId(campo)} = ${mysql.escape(datos[campo])}`
+  ).join(', ');
 
   const query = `UPDATE ${tablaEscapada} SET ${updates} WHERE ${mysql.escapeId(idColumna)} = ${mysql.escape(id)}`;
 
-  db.query(query, (err, results) => {
+  db.query(query, async (err, results) => {
     if (err) {
-      console.error('Error al ejecutar la actualización:', err);
-      return res.status(500).json({ error: 'Error al actualizar los registros en la tabla.' });
+      console.error('Error al actualizar:', err);
+      return res.status(500).json({ error: 'Error al actualizar el registro' });
     }
-    res.json({ message: 'Registro actualizado exitosamente' });
+    
+    try {
+      if(syncFirebase[nombreTabla]?.update) {
+        await syncFirebase[nombreTabla].update(id, datos);
+      }
+      res.json({ 
+        message: 'Registro actualizado exitosamente',
+        firebase: `Actualización sincronizada en Firebase`
+      });
+    } catch (firebaseError) {
+      console.error('Error Firebase:', firebaseError);
+      res.status(500).json({ 
+        error: 'Registro actualizado en MySQL pero falló en Firebase'
+      });
+    }
   });
 });
-
 // Endpoint para borrar registros en cualquier tabla
 // Toma el nombre de la tabla como parametros.
 // El ID del registro a borrar debe enviarse en la URL.
 // Endpoint para borrar registros en cualquier tabla
-app.delete('/tabla/:nombre/:id', (req, res) => {
+app.delete('/tabla/:nombre/:id', async (req, res) => {
   const nombreTabla = req.params.nombre;
   const id = req.params.id;
-  const idColumna = req.query.idColumna || 'id'; // Nombre de la columna de identificación, por defecto 'id'
+  const idColumna = req.query.idColumna || 'id';
   const tablaEscapada = mysql.escapeId(nombreTabla);
 
-  const query = `DELETE FROM ${tablaEscapada} WHERE ${mysql.escapeId(idColumna)} = ${mysql.escape(id)}`;
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error al ejecutar el borrado:', err);
-      return res.status(500).json({ error: 'Error al borrar el registro de la tabla.' });
+  // Obtener datos necesarios para Firebase antes de borrar
+  const getQuery = `SELECT * FROM ${tablaEscapada} WHERE ${mysql.escapeId(idColumna)} = ${mysql.escape(id)}`;
+  
+  db.query(getQuery, async (err, results) => {
+    if (err || results.length === 0) {
+      console.error('Error al obtener registro:', err);
+      return res.status(500).json({ error: 'Error al obtener registro para sincronización' });
     }
-    res.json({ message: 'Registro borrado exitosamente' });
+
+    const registro = results[0];
+    const deleteQuery = `DELETE FROM ${tablaEscapada} WHERE ${mysql.escapeId(idColumna)} = ${mysql.escape(id)}`;
+
+    db.query(deleteQuery, async (err, deleteResults) => {
+      if (err) {
+        console.error('Error al borrar:', err);
+        return res.status(500).json({ error: 'Error al borrar el registro' });
+      }
+      
+      try {
+        if(syncFirebase[nombreTabla]?.delete) {
+          // Manejar relaciones especiales
+          if(nombreTabla === 'Jardines') {
+            await syncFirebase[nombreTabla].delete(id, registro.usuario_id);
+          } else if(nombreTabla === 'Productos') {
+            await syncFirebase[nombreTabla].delete(id, registro.tipo_producto);
+          } else {
+            await syncFirebase[nombreTabla].delete(id);
+          }
+        }
+        res.json({ 
+          message: 'Registro borrado exitosamente',
+          firebase: `Borrado sincronizado en Firebase`
+        });
+      } catch (firebaseError) {
+        console.error('Error Firebase:', firebaseError);
+        res.status(500).json({ 
+          error: 'Registro borrado en MySQL pero falló en Firebase'
+        });
+      }
+    });
   });
 });
+
 
 // Endpoint para obtener estructura de la tabla
 // Toma el nombre de la tabla como parametros.
