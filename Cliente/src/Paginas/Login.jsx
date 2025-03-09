@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Card, Form, Button, Alert } from 'react-bootstrap';
+
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -46,40 +48,60 @@ function Login() {
   };
 
   return (
-    <div className="login-container">
-      <h2>Acceso al Sistema</h2>
-      <form onSubmit={handleSubmit} className="login-form">
-        
-        <div className="input-group">
-          <label htmlFor="email">Correo Electrónico:</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value.trim())}
-            autoComplete="username"
-            placeholder="ejemplo@correo.com"
-          />
-        </div>
+    <div className="login-container d-flex align-items-center min-vh-100">
+      <Card className="w-100 shadow" style={{ maxWidth: '400px', margin: '0 auto' }}>
+        <Card.Body>
+          <div className="text-center mb-4">
+            <img 
+              src="../Recursos/OIG1.jpg" 
+              alt="Logo" 
+              style={{ width: '100px', filter: 'invert(1)' }}
+            />
+          </div>
+          
+          <Card.Title className="text-center mb-4 h3 text-primary">
+            Acceso al Sistema
+          </Card.Title>
 
-        <div className="input-group">
-          <label htmlFor="password">Contraseña:</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            placeholder="••••••••"
-          />
-        </div>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Correo Electrónico</Form.Label>
+              <Form.Control
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                placeholder="nombre@ejemplo.com"
+                required
+              />
+            </Form.Group>
 
-        {error && <div className="error-message">{error}</div>}
+            <Form.Group className="mb-4">
+              <Form.Label>Contraseña</Form.Label>
+              <Form.Control
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </Form.Group>
 
-        <button type="submit" className="login-button">
-          Iniciar Sesión
-        </button>
-      </form>
+            {error && <Alert variant="danger" className="text-center">{error}</Alert>}
+
+            <Button 
+              variant="primary" 
+              type="submit" 
+              className="w-100 mb-3"
+            >
+              Ingresar
+            </Button>
+
+            <div className="text-center small text-muted mt-4">
+              ¿No tienes cuenta? <a href="/registro" className="text-warning">Regístrate</a>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
     </div>
   );
 }
