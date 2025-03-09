@@ -10,32 +10,75 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(''); // Limpiar errores anteriores
+    
     try {
-      const response = await axios.post('http://localhost:3000/login', { email, password });
-      if (response.data.rol === 'cliente') {
-        navigate('/nextpage'); // Redirige a la siguiente página
-      } else {
-        setError('Solo los usuarios con rol de cliente pueden acceder.');
+      // Validación básica de campos
+      if (!email || !password) {
+        setError('Por favor complete todos los campos');
+        return;
       }
+
+      const response = await axios.post('http://localhost:3000/login', {
+        email,
+        password // Envía la contraseña en texto plano
+      });
+
+      // Manejo de redirección por rol
+      switch(response.data.rol) {
+        case 'cliente':
+          navigate('/dashboard-cliente');
+          break;
+        case 'admin':
+          navigate('/dashboard-admin');
+          break;
+        default:
+          setError('Rol de usuario no reconocido');
+      }
+
     } catch (err) {
-      setError('Error de autenticación. Verifique sus credenciales.');
+      // Manejo detallado de errores
+      const errorMessage = err.response?.data?.error || 
+                         err.message || 
+                         'Error de conexión';
+      setError(`Error: ${errorMessage}`);
     }
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email:</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+    <div className="login-container">
+      <h2>Acceso al Sistema</h2>
+      <form onSubmit={handleSubmit} className="login-form">
+        
+        <div className="input-group">
+          <label htmlFor="email">Correo Electrónico:</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value.trim())}
+            autoComplete="username"
+            placeholder="ejemplo@correo.com"
+          />
         </div>
-        <div>
-          <label>Contraseña:</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+        <div className="input-group">
+          <label htmlFor="password">Contraseña:</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            placeholder="••••••••"
+          />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit">Login</button>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <button type="submit" className="login-button">
+          Iniciar Sesión
+        </button>
       </form>
     </div>
   );

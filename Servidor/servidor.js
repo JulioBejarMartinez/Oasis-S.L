@@ -4,6 +4,11 @@ import cors from 'cors';
 import { initializeApp } from "firebase/app";
 import bcrypt from 'bcrypt';
 import { getFirestore, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import jwt from 'jsonwebtoken';
+
+// Clave secreta para JWT
+const JWT_SECRET = 'tu_clave_secreta_super_segura'; // Cambia esto por una clave real
+
 
 
 const app = express();
@@ -333,6 +338,46 @@ app.get('/tabla/:nombre/estructura', (req, res) => {
   db.query(query, (err, results) => {
       if (err) return res.status(500).json({ error: "Error al obtener estructura" });
       res.json(results);
+  });
+});
+
+//  Endpoint para verificar el login del usuario.
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  // 1. Buscar usuario por email
+  const query = `SELECT * FROM Usuarios WHERE email = ?`;
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error en el servidor' });
+    }
+
+    // 2. Verificar si el usuario existe
+    if (results.length === 0) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    const user = results[0];
+
+    // 3. Comparación directa de texto plano
+    if (password !== user.contraseña_hash) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    // 4. Generar token JWT (sin hash)
+    const token = jwt.sign(
+      { usuario_id: user.usuario_id, rol: user.rol },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 5. Respuesta exitosa
+    res.json({
+      token,
+      usuario_id: user.usuario_id,
+      nombre: user.nombre,
+      rol: user.rol
+    });
   });
 });
  
