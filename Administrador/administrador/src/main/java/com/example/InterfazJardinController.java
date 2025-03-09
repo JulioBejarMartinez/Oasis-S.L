@@ -175,7 +175,7 @@ public class InterfazJardinController {
                     mostrarFormularioAgregarProducto(tipoFormulario, registroExistente);
                     break;
                 case "facturas":
-                    mostrarFormularioAgregarFactura();
+                    mostrarFormularioAgregarFactura(tipoFormulario, registroExistente);
                     break;
                 case "plantas":
                     mostrarFormularioAgregarPlanta(tipoFormulario, registroExistente);
@@ -540,13 +540,17 @@ public class InterfazJardinController {
     }
     
     
-    private void mostrarFormularioAgregarFactura() {
+
+    //Funcion para mostrar el formulario de agregar una factura
+    //Se muestra un dialogo con los campos necesarios para agregar una factura
+    //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
+    private void mostrarFormularioAgregarFactura(String tipoFormulario, JSONObject registroExistente) {
         Dialog<JSONObject> dialog = new Dialog<>();
-        dialog.setTitle("Agregar Factura");
+        dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Factura" : "Editar Factura");
     
         // Set the button types
-        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+        ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
     
         // Create the labels and fields
         GridPane grid = new GridPane();
@@ -572,6 +576,12 @@ public class InterfazJardinController {
             usuarioIdComboBox.getItems().add(usuario.getInt("usuario_id"));
         }
     
+        if (registroExistente != null) {
+            montoTotal.setText(String.valueOf(registroExistente.optDouble("monto_total")));
+            estadoComboBox.setValue(registroExistente.optString("estado"));
+            usuarioIdComboBox.setValue(registroExistente.optInt("usuario_id"));
+        }
+    
         grid.add(new Label("Monto Total:"), 0, 0);
         grid.add(montoTotal, 1, 0);
         grid.add(new Label("Estado:"), 0, 1);
@@ -583,12 +593,14 @@ public class InterfazJardinController {
     
         // Convert the result to a JSONObject when the add button is clicked.
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
+            if (dialogButton == actionButtonType) {
                 JSONObject newFactura = new JSONObject();
-                newFactura.put("fecha_emision", LocalDateTime.now().toString());
                 newFactura.put("monto_total", Double.parseDouble(montoTotal.getText()));
                 newFactura.put("estado", estadoComboBox.getValue());
                 newFactura.put("usuario_id", usuarioIdComboBox.getValue());
+                if (tipoFormulario.equals("agregar")) {
+                    newFactura.put("fecha_emision", LocalDateTime.now().toString());
+                }
                 return newFactura;
             }
             return null;
@@ -597,9 +609,15 @@ public class InterfazJardinController {
         Optional<JSONObject> result = dialog.showAndWait();
     
         result.ifPresent(factura -> {
-            // Call your API to add the invoice
-            String responseInsert = apiClient.insertarRegistro("Facturas", factura.toMap());
-            mostrarAlerta("Resultado", responseInsert);
+            if (tipoFormulario.equals("agregar")) {
+                // Call your API to add the invoice
+                String responseInsert = apiClient.insertarRegistro("Facturas", factura.toMap());
+                mostrarAlerta("Resultado", responseInsert);
+            } else {
+                // Call your API to update the invoice
+                String responseUpdate = apiClient.actualizarRegistro("Facturas", "factura_id", String.valueOf(registroExistente.getInt("factura_id")), factura.toMap());
+                mostrarAlerta("Resultado", responseUpdate);
+            }
         });
     
         cargarTabla(tablaActual);
