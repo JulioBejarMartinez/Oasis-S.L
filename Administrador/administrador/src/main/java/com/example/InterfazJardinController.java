@@ -178,7 +178,7 @@ public class InterfazJardinController {
                     mostrarFormularioAgregarFactura();
                     break;
                 case "plantas":
-                    mostrarFormularioAgregarPlanta();
+                    mostrarFormularioAgregarPlanta(tipoFormulario, registroExistente);
                     break;
                 case "configuraciones":
                     mostrarFormularioAgregarConfiguracion();
@@ -196,7 +196,6 @@ public class InterfazJardinController {
     // Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
     //
     //
-
 
     //Funcion para mostrar el formulario de agregar un usuario
     //Se muestra un dialogo con los campos necesarios para agregar un usuario
@@ -447,13 +446,18 @@ public class InterfazJardinController {
         cargarTabla(tablaActual);
     }
 
-    private void mostrarFormularioAgregarPlanta() {
+
+
+    //Funcion para mostrar el formulario de agregar una planta
+    //Se muestra un dialogo con los campos necesarios para agregar una planta
+    //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
+    private void mostrarFormularioAgregarPlanta(String tipoFormulario, JSONObject registroExistente) {
         Dialog<JSONObject> dialog = new Dialog<>();
-        dialog.setTitle("Agregar Planta");
+        dialog.setTitle(tipoFormulario.equals("agregar") ? "Agregar Planta" : "Editar Planta");
     
         // Set the button types
-        ButtonType addButtonType = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+        ButtonType actionButtonType = new ButtonType(tipoFormulario.equals("agregar") ? "Agregar" : "Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(actionButtonType, ButtonType.CANCEL);
     
         // Create the labels and fields
         GridPane grid = new GridPane();
@@ -468,6 +472,10 @@ public class InterfazJardinController {
         estadoComboBox.getItems().addAll("Viva", "Muerta");
         estadoComboBox.setPromptText("Estado");
     
+        ComboBox<String> tipoPlantaComboBox = new ComboBox<>();
+        tipoPlantaComboBox.getItems().addAll("Ornamental", "Aromática", "Medicinal", "Culinaria", "Suculenta", "Cactus", "Trepadora", "Cobertura", "Acuática", "Bulbosa", "Helecho", "Palmera");
+        tipoPlantaComboBox.setPromptText("Tipo de Planta");
+    
         // Fetch product IDs from the API and populate the ComboBox with only "planta" type products
         String responseProductos = apiClient.getRegistros("Productos");
         JSONArray productos = new JSONArray(responseProductos);
@@ -478,19 +486,28 @@ public class InterfazJardinController {
             }
         }
     
+        if (registroExistente != null) {
+            productoIdComboBox.setValue(registroExistente.optInt("producto_id"));
+            estadoComboBox.setValue(registroExistente.optString("estado"));
+            tipoPlantaComboBox.setValue(registroExistente.optString("tipoPlanta"));
+        }
+    
         grid.add(new Label("Producto ID:"), 0, 0);
         grid.add(productoIdComboBox, 1, 0);
         grid.add(new Label("Estado:"), 0, 1);
         grid.add(estadoComboBox, 1, 1);
+        grid.add(new Label("Tipo de Planta:"), 0, 2);
+        grid.add(tipoPlantaComboBox, 1, 2);
     
         dialog.getDialogPane().setContent(grid);
     
         // Convert the result to a JSONObject when the add button is clicked.
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
+            if (dialogButton == actionButtonType) {
                 JSONObject newPlanta = new JSONObject();
-                newPlanta.put("producto_id", productoIdComboBox.getValue());
+                newPlanta.put("producto_id", productoIdComboBox.getValue()); // Asegúrate de incluir el producto_id
                 newPlanta.put("estado", estadoComboBox.getValue());
+                newPlanta.put("tipoPlanta", tipoPlantaComboBox.getValue());
                 return newPlanta;
             }
             return null;
@@ -499,14 +516,30 @@ public class InterfazJardinController {
         Optional<JSONObject> result = dialog.showAndWait();
     
         result.ifPresent(planta -> {
-            // Call your API to add the plant
-            String responseInsert = apiClient.insertarRegistro("Plantas", planta.toMap());
-            mostrarAlerta("Resultado", responseInsert);
+            if (tipoFormulario.equals("agregar")) {
+                // Call your API to add the plant
+                String responseInsert = apiClient.insertarRegistro("Plantas", planta.toMap());
+                mostrarAlerta("Resultado", responseInsert);
+            } else {
+                // Check if producto_id exists before updating
+                if (registroExistente.has("producto_id")) { // Cambiado a producto_id
+                    String responseUpdate = apiClient.actualizarRegistro(
+                        "Plantas", 
+                        "producto_id", // Cambiado a producto_id
+                        String.valueOf(registroExistente.getInt("producto_id")), // Cambiado a producto_id
+                        planta.toMap()
+                    );
+                    mostrarAlerta("Resultado", responseUpdate);
+                } else {
+                    mostrarAlerta("Error", "El registro seleccionado no tiene un ID de planta válido.");
+                }
+            }
         });
     
         cargarTabla(tablaActual);
     }
-
+    
+    
     private void mostrarFormularioAgregarFactura() {
         Dialog<JSONObject> dialog = new Dialog<>();
         dialog.setTitle("Agregar Factura");
