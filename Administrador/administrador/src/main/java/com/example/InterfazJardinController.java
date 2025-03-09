@@ -61,6 +61,9 @@ public class InterfazJardinController {
     private Button editarButton;
 
     @FXML
+    private Button borrarButton;
+
+    @FXML
     private TableView<JSONObject> tableView;
 
     private ApiClient apiClient;
@@ -86,6 +89,14 @@ public class InterfazJardinController {
                 mostrarFormularioAgregar("editar", selectedItem);
             } else {
                 mostrarAlerta("Error", "No se ha seleccionado ningún registro para editar.");
+            }
+        });
+        borrarButton.setOnAction(event -> {
+            JSONObject selectedItem = tableView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null) {
+                borrarRegistro(selectedItem);
+            } else {
+                mostrarAlerta("Error", "No se ha seleccionado ningún registro para borrar.");
             }
         });
 
@@ -155,6 +166,53 @@ public class InterfazJardinController {
     }
 
 
+    // Funcion para borrar un registro seleccionado
+    // Se recibe un JSONObject con el registro seleccionado
+    // Se comprueba el nombre de la tabla actual y se llama a la funcion correspondiente
+    private void borrarRegistro(JSONObject registroExistente) {
+        if (tablaActual == null) {
+            mostrarAlerta("Error", "No se ha seleccionado ninguna tabla.");
+            return;
+        }
+
+        String idKey = "";
+        switch (tablaActual.toLowerCase()) {
+            case "usuarios":
+                idKey = "usuario_id";
+                break;
+            case "jardines":
+                idKey = "jardin_id";
+                break;
+            case "productos":
+                idKey = "producto_id";
+                break;
+            case "facturas":
+                idKey = "factura_id";
+                break;
+            case "plantas":
+                idKey = "producto_id"; // Asumiendo que plantas usa producto_id
+                break;
+            case "configuraciones":
+                idKey = "configuracion_id";
+                break;
+            default:
+                mostrarAlerta("Error", "No se ha seleccionado ninguna tabla.");
+                return;
+        }
+
+        if (!registroExistente.has(idKey)) {
+            mostrarAlerta("Error", "El registro seleccionado no tiene un ID válido.");
+            return;
+        }
+
+        String idValue = String.valueOf(registroExistente.getInt(idKey));
+        String responseDelete = apiClient.borrarRegistro(tablaActual, idKey, idValue);
+        mostrarAlerta("Resultado", responseDelete);
+
+        cargarTabla(tablaActual);
+    }
+
+
     // Funcion encargada de mostrar el formulario para agregar un registro a la tabla actual
     // Se comprueba el nombre de la tabla actual y se llama a la funcion correspondiente
 
@@ -196,7 +254,6 @@ public class InterfazJardinController {
     // Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
     //
     //
-
     //Funcion para mostrar el formulario de agregar un usuario
     //Se muestra un dialogo con los campos necesarios para agregar un usuario
     //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
@@ -447,7 +504,6 @@ public class InterfazJardinController {
     }
 
 
-
     //Funcion para mostrar el formulario de agregar una planta
     //Se muestra un dialogo con los campos necesarios para agregar una planta
     //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
@@ -540,7 +596,6 @@ public class InterfazJardinController {
     }
     
     
-
     //Funcion para mostrar el formulario de agregar una factura
     //Se muestra un dialogo con los campos necesarios para agregar una factura
     //Se recogen los datos introducidos por el usuario y se envian a la API para insertar el registro
