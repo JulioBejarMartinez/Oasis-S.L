@@ -3,7 +3,7 @@ import mysql from 'mysql';
 import cors from 'cors';
 import { initializeApp } from "firebase/app";
 import bcrypt from 'bcrypt';
-import { getFirestore, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, updateDoc, deleteDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
 
 // Clave secreta para JWT
@@ -380,7 +380,40 @@ app.post('/login', (req, res) => {
     });
   });
 });
- 
+
+// 
+//
+//
+// Endpoints para Firebase y todo lo referente al Cliente
+//
+//
+//
+
+// Endpoint para obtener los datos del usuario y sus jardines desde Firebase
+app.get('/usuario/:id', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Obtener datos del usuario
+    const userDoc = await getDoc(doc(firestore, "users", userId));
+    if (!userDoc.exists()) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const userData = userDoc.data();
+
+    // Obtener jardines del usuario
+    const gardensQuery = query(collection(firestore, `users/${userId}/gardens`));
+    const gardensSnapshot = await getDocs(gardensQuery);
+    const gardens = gardensSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Responder con los datos del usuario y sus jardines
+    res.json({ user: userData, gardens });
+  } catch (error) {
+    console.error('Error al obtener datos del usuario:', error);
+    res.status(500).json({ error: 'Error al obtener datos del usuario' });
+  }
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);

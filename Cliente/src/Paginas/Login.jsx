@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Card, Form, Button, Alert } from 'react-bootstrap';
+import logo from '../Recursos/logoOasisSL.png';
 
 
 function Login() {
@@ -26,13 +27,15 @@ function Login() {
         password // Envía la contraseña en texto plano
       });
 
+      localStorage.setItem('userId', response.data.usuario_id);
+
       // Manejo de redirección por rol
       switch(response.data.rol) {
         case 'cliente':
-          navigate('/dashboard-cliente');
+          navigate('/PaginaCliente');
           break;
         case 'admin':
-          navigate('/dashboard-admin');
+          navigate('/PaginaCliente');
           break;
         default:
           setError('Rol de usuario no reconocido');
@@ -53,9 +56,9 @@ function Login() {
         <Card.Body>
           <div className="text-center mb-4">
             <img 
-              src="../Recursos/OIG1.jpg" 
+              src={logo} 
               alt="Logo" 
-              style={{ width: '100px', filter: 'invert(1)' }}
+              style={{ width: '150px' }}
             />
           </div>
           

@@ -15,7 +15,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/nextpage" element={<PaginaCliente />} />
+        <Route path="/PaginaCliente" element={<PaginaCliente />} />
       </Routes>
     </Router>
     </div>
