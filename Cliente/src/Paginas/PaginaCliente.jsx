@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Alert, Card } from 'react-bootstrap';
+import { Alert, Card, ProgressBar, Row, Col } from 'react-bootstrap';
 
 function PaginaCliente() {
   const [userData, setUserData] = useState(null);
   const [gardens, setGardens] = useState([]);
+  const [sensorData, setSensorData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const userId = localStorage.getItem('userId');
@@ -33,8 +34,102 @@ function PaginaCliente() {
       }
     };
 
+    const fetchSensorData = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/sensores/tiempoReal');
+        setSensorData(response.data);
+      } catch (error) {
+        console.error('Error obteniendo datos de sensores:', error);
+      }
+    };
+
+    // Cargar datos iniciales
     fetchUserData();
+    fetchSensorData();
+
+    // Configurar intervalos de actualización
+    const sensorInterval = setInterval(fetchSensorData, 60000);
+    
+    return () => {
+      clearInterval(sensorInterval);
+    };
   }, [userId]);
+
+  const getProgressVariant = (value, max = 100) => {
+    const percentage = (value / max) * 100;
+    if (percentage < 30) return 'danger';
+    if (percentage < 60) return 'warning';
+    return 'success';
+  };
+
+  const SensorDisplay = () => (
+    <Card className="mb-4 shadow">
+      <Card.Body>
+        <Card.Title className="text-primary">
+          <i className="bi bi-speedometer2 me-2"></i>
+          Estado del Sistema en Tiempo Real
+        </Card.Title>
+
+        <Row className="g-4">
+          <Col md={6} lg={4}>
+            <div className="sensor-card">
+              <h5><i className="bi bi-droplet-fill text-info me-2"></i>Nivel de Agua</h5>
+              <ProgressBar 
+                now={sensorData.nivelAgua} 
+                max={500} 
+                variant={getProgressVariant(sensorData.nivelAgua, 500)}
+                label={`${sensorData.nivelAgua}ml`}
+              />
+              <small className="text-muted">Capacidad máxima: 500ml</small>
+            </div>
+          </Col>
+
+          <Col md={6} lg={4}>
+            <div className="sensor-card">
+              <h5><i className="bi bi-moisture text-success me-2"></i>Humedad Suelo</h5>
+              <ProgressBar 
+                now={sensorData.humedadSuelo} 
+                variant={getProgressVariant(sensorData.humedadSuelo)}
+                label={`${sensorData.humedadSuelo}%`}
+              />
+            </div>
+          </Col>
+
+          <Col md={6} lg={4}>
+            <div className="sensor-card">
+              <h5><i className="bi bi-cloud-rain text-primary me-2"></i>Humedad Aire</h5>
+              <ProgressBar 
+                now={sensorData.humedadAire} 
+                variant={getProgressVariant(sensorData.humedadAire)}
+                label={`${sensorData.humedadAire}%`}
+              />
+            </div>
+          </Col>
+
+          <Col md={6} lg={4}>
+            <div className="sensor-card">
+              <h5><i className="bi bi-thermometer-half text-danger me-2"></i>Temperatura</h5>
+              <h3 className="text-center">
+                {sensorData.tempC}°C
+              </h3>
+            </div>
+          </Col>
+
+          <Col md={6} lg={4}>
+            <div className="sensor-card">
+              <h5><i className="bi bi-gear-fill text-secondary me-2"></i>Posición Servo</h5>
+              <div className="text-center display-4">
+                {sensorData.posicionServo}°
+                <div className="text-muted" style={{fontSize: '1rem'}}>
+                  (0° = cerrado, 180° = abierto)
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
+  );
 
   return (
     <div className="container mt-4">
@@ -56,25 +151,35 @@ function PaginaCliente() {
       )}
 
       {userData && (
-        <Card className="mb-4 shadow">
-          <Card.Body>
-            <Card.Title className="text-primary">
-              <i className="bi bi-person-circle me-2"></i>
-              Tus Datos
-            </Card.Title>
-            
-            <div className="row">
-              <div className="col-md-6">
-                <p><strong>Nombre:</strong> {userData.nombre}</p>
-                <p><strong>Email:</strong> {userData.email}</p>
+        <>
+          <Card className="mb-4 shadow">
+            <Card.Body>
+              <Card.Title className="text-primary">
+                <i className="bi bi-person-circle me-2"></i>
+                Tus Datos
+              </Card.Title>
+              
+              <div className="row">
+                <div className="col-md-6">
+                  <p><strong>Nombre:</strong> {userData.nombre}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                </div>
+                <div className="col-md-6">
+                  <p><strong>Rol:</strong> {userData.rol}</p>
+                  <p><strong>Registro:</strong> {new Date(userData.fecha_registro).toLocaleDateString()}</p>
+                </div>
               </div>
-              <div className="col-md-6">
-                <p><strong>Rol:</strong> {userData.rol}</p>
-                <p><strong>Registro:</strong> {new Date(userData.fecha_registro).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
+            </Card.Body>
+          </Card>
+
+          {sensorData ? (
+            <SensorDisplay />
+          ) : (
+            <Alert variant="info" className="text-center mb-4">
+              Cargando datos de sensores...
+            </Alert>
+          )}
+        </>
       )}
 
       <Card className="shadow">

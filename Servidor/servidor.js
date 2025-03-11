@@ -47,6 +47,9 @@ const firestore = getFirestore(firebaseApp);
 
 let latestSensorData = null;
 
+// Función para obtener los datos de los sensores
+// y guardarlos en Firebase cada minuto
+
 const fetchSensorData = async () => {
   try {
     const response = await axios.get('http://dam2.colexio-karbo.com:6320/datosSensores');
@@ -180,15 +183,21 @@ app.get('/', (req, res) => {
 //
 //        
 //
-
-// Endpoint para obtener los datos de los sensores desde servidorArduino.js
-app.get('/datosSensores', async (req, res) => {
+// Endpoint para obtener los datos actuales de los sensores de firebase
+// Endpoint para obtener los datos de los sensores en tiempoReal desde Firebase
+app.get('/sensores/tiempoReal', async (req, res) => {
   try {
-    const response = await axios.get('http://dam2.colexio-karbo.com:6320/datosSensores');
-    res.json(response.data);
+    const docRef = doc(firestore, "DatosSensores", "tiempoReal");
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      res.json(docSnap.data());
+    } else {
+      res.status(404).json({ error: 'No se encontraron datos en tiempoReal' });
+    }
   } catch (error) {
-    console.error('Error al obtener datos de los sensores:', error);
-    res.status(500).json({ error: 'Error al obtener datos de los sensores' });
+    console.error('Error al obtener datos de tiempoReal:', error);
+    res.status(500).json({ error: 'Error al obtener datos de tiempoReal' });
   }
 });
 
