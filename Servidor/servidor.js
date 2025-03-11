@@ -75,7 +75,7 @@ setInterval(async () => {
       });
 
       // Guardar en Globales
-      await setDoc(doc(firestore, "DatosSensores", `Globales_${timestamp}`), {
+      await setDoc(doc(collection(firestore, "DatosSensores", "Globales", timestamp)), {
         nivelAgua: parsedData.nivelAgua,
         humedadSuelo: parsedData.humedadSuelo,
         humedadAire: parsedData.humedadAire,
