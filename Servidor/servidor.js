@@ -3,7 +3,7 @@ import mysql from 'mysql';
 import cors from 'cors';
 import { initializeApp } from "firebase/app";
 import bcrypt from 'bcrypt';
-import { getFirestore, doc, setDoc, updateDoc, deleteDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, doc, setDoc, updateDoc, deleteDoc, getDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import { Server } from 'socket.io';
@@ -77,8 +77,8 @@ setInterval(async () => {
         timestamp
       });
 
-      // Guardar en Globales
-      await setDoc(doc(collection(firestore, "DatosSensores", "Globales", timestamp)), {
+      // Dentro del setInterval que guarda datos:
+      await setDoc(doc(collection(firestore, "DatosSensores/Globales/registros")), {
         nivelAgua: parsedData.nivelAgua,
         humedadSuelo: parsedData.humedadSuelo,
         humedadAire: parsedData.humedadAire,
@@ -201,6 +201,40 @@ app.get('/sensores/tiempoReal', async (req, res) => {
   }
 });
 
+// endpoint para obtener datos históricos
+// Endpoint modificado en servidor.js
+// Modificar el endpoint histórico para incluir conversión
+app.get('/sensores/historico', async (req, res) => {
+  try {
+    const veinticuatroHorasAtras = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const historicoRef = collection(firestore, "DatosSensores", "Globales", "registros");
+    
+    const q = query(
+      historicoRef,
+      where("timestamp", ">=", veinticuatroHorasAtras),
+      orderBy("timestamp", "asc")
+    );
+
+    const querySnapshot = await getDocs(q);
+    const datos = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        humedadSuelo: (data.humedadSuelo / 1023 * 100).toFixed(1),
+        humedadAire: (data.humedadAire / 1023 * 100).toFixed(1),
+        hora: new Date(data.timestamp).toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+    });
+
+    res.json(datos);
+  } catch (error) {
+    console.error('Error al obtener histórico:', error);
+    res.status(500).json({ error: 'Error al obtener datos históricos' });
+  }
+});
 //
 //
 //
