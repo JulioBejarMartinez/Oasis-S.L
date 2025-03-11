@@ -5,11 +5,12 @@ import { initializeApp } from "firebase/app";
 import bcrypt from 'bcrypt';
 import { getFirestore, doc, setDoc, updateDoc, deleteDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
+import { Server } from 'socket.io';
+import http from 'http';
 
 // Clave secreta para JWT
 const JWT_SECRET = 'tu_clave_secreta_super_segura'; // Cambia esto por una clave real
-
-
 
 const app = express();
 const port = 3000;
@@ -43,6 +44,53 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(firebaseApp);
+
+let latestSensorData = null;
+
+const fetchSensorData = async () => {
+  try {
+    const response = await axios.get('http://dam2.colexio-karbo.com:6320/datosSensores');
+    latestSensorData = response.data;
+  } catch (error) {
+    console.error('Error al obtener datos de los sensores:', error);
+  }
+};
+
+setInterval(async () => {
+  await fetchSensorData();
+  if (latestSensorData) {
+    const timestamp = new Date().toISOString();
+    try {
+      // Parsear los datos recibidos
+      const parsedData = JSON.parse(latestSensorData.data);
+
+      // Guardar en tiempoReal
+      await setDoc(doc(firestore, "DatosSensores", "tiempoReal"), {
+        nivelAgua: parsedData.nivelAgua,
+        humedadSuelo: parsedData.humedadSuelo,
+        humedadAire: parsedData.humedadAire,
+        tempC: parsedData.tempC,
+        posicionServo: parsedData.posicionServo,
+        timestamp
+      });
+
+      // Guardar en Globales
+      await setDoc(doc(firestore, "DatosSensores", `Globales_${timestamp}`), {
+        nivelAgua: parsedData.nivelAgua,
+        humedadSuelo: parsedData.humedadSuelo,
+        humedadAire: parsedData.humedadAire,
+        tempC: parsedData.tempC,
+        posicionServo: parsedData.posicionServo,
+        timestamp
+      });
+
+      console.log('Datos de sensores guardados en Firebase');
+    } catch (error) {
+      console.error('Error al guardar datos en Firebase:', error);
+    }
+  }
+}, 60000);
+
 // Conexión a la BBDD (Comprobacion)
 
 db.connect((err) => {
@@ -122,6 +170,27 @@ const syncFirebase = {
 app.get('/', (req, res) => {
   res.send('¡Hola, mundo!');
 });
+//
+//
+//
+//
+// Endpoints para consumir el servidor de Arduino
+//
+//
+//
+//        
+//
+
+// Endpoint para obtener los datos de los sensores desde servidorArduino.js
+app.get('/datosSensores', async (req, res) => {
+  try {
+    const response = await axios.get('http://dam2.colexio-karbo.com:6320/datosSensores');
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error al obtener datos de los sensores:', error);
+    res.status(500).json({ error: 'Error al obtener datos de los sensores' });
+  }
+});
 
 //
 //
@@ -133,6 +202,7 @@ app.get('/', (req, res) => {
 //
 //        
 //
+
 // Endpoint reutilizable para leer todos los registros de cualquier tabla
 // Toma el nombre de la tabla como parametros.
 app.get('/tabla/:nombre', (req, res) => {
