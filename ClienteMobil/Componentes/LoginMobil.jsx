@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginMobil = () => {
   const [email, setEmail] = useState('');
@@ -15,20 +16,23 @@ const LoginMobil = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/login', {
+      const response = await axios.post('http://192.168.1.53:3000/login', {
         email,
         password,
       });
+
+    //localStorage.setItem('userId', response.data.usuario_id); 
+    await AsyncStorage.setItem('userId', response.data.usuario_id.toString());
 
       // Store user ID in local storage or AsyncStorage
       // For example: await AsyncStorage.setItem('userId', response.data.usuario_id);
 
       switch (response.data.rol) {
         case 'cliente':
-          navigation.navigate('PaginaCliente');
+          navigation.navigate('PaginaClienteMobil');
           break;
         case 'admin':
-          navigation.navigate('PaginaCliente');
+          navigation.navigate('PaginaClienteMobil');
           break;
         default:
           Alert.alert('Error', 'Rol de usuario no reconocido');
