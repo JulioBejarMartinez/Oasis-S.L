@@ -87,12 +87,30 @@ public class InterfazJardinController {
     @FXML
     public void initialize() {
         apiClient = new ApiClient();
-        usuariosButton.setOnAction(event -> cargarTabla("Usuarios"));
-        jardinesButton.setOnAction(event -> cargarTabla("Jardines"));
-        productosButton.setOnAction(event -> cargarTabla("Productos"));
-        facturasButton.setOnAction(event -> cargarTabla("Facturas"));
-        plantasButton.setOnAction(event -> cargarTabla("Plantas"));
-        configuracionesButton.setOnAction(event -> cargarTabla("Configuraciones"));
+        usuariosButton.setOnAction(event -> {
+            cargarTabla("Usuarios");
+            mostrarTabla();
+        });
+        jardinesButton.setOnAction(event -> {
+            cargarTabla("Jardines");
+            mostrarTabla();
+        });
+        productosButton.setOnAction(event -> {
+            cargarTabla("Productos");
+            mostrarTabla();
+        });
+        facturasButton.setOnAction(event -> {
+            cargarTabla("Facturas");
+            mostrarTabla();
+        });
+        plantasButton.setOnAction(event -> {
+            cargarTabla("Plantas");
+            mostrarTabla();
+        });
+        configuracionesButton.setOnAction(event -> {
+            cargarTabla("Configuraciones");
+            mostrarTabla();
+        });
         DatosTiempoReal.setOnAction(event -> {
             cargarDatosTiempoReal();
             mostrarGraficaTiempoReal(new JSONObject(apiClient.getDatosTiempoReal()));
@@ -178,6 +196,13 @@ public class InterfazJardinController {
         }
 
         isLoading = false;
+    }
+
+
+    private void mostrarTabla() {
+        tableView.setVisible(true);
+        barChart.setVisible(false);
+        barChart.getData().clear();
     }
 
 
