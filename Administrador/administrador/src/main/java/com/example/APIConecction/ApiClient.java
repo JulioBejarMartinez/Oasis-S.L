@@ -42,14 +42,14 @@ public class ApiClient {
             for (Map.Entry<String, String> filtro : filtros.entrySet()) {
                 queryParams.add(filtro.getKey() + "=" + filtro.getValue());
             }
-
+    
             String endpoint = API_URL + "tabla/" + nombreTabla + "/filtrar?" + queryParams.toString();
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI(endpoint))
                     .GET()
                     .build();
-
+    
             HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
             response = httpResponse.body();
         } catch (Exception e) {

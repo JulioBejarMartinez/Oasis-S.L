@@ -270,9 +270,9 @@ app.get('/tabla/:nombre', (req, res) => {
 app.get('/tabla/:nombre/filtrar', (req, res) => {
   const nombreTabla = req.params.nombre;
   const tablaEscapada = mysql.escapeId(nombreTabla);
-  const searchTerm = req.query.search;
+  const filtros = req.query;
 
-  if (!searchTerm) {
+  if (Object.keys(filtros).length === 0) {
     return res.status(400).json({ error: 'Parámetro de búsqueda requerido.' });
   }
 
@@ -283,11 +283,11 @@ app.get('/tabla/:nombre/filtrar', (req, res) => {
       return res.status(500).json({ error: 'Error al obtener estructura de la tabla.' });
     }
 
-    // Construir condiciones LIKE para todas las columnas de tipo texto
-    const conditions = columns
-      .filter(col => col.Type.includes('char') || col.Type.includes('text'))
-      .map(col => `${mysql.escapeId(col.Field)} LIKE ${mysql.escape(`%${searchTerm}%`)}`)
-      .join(' OR ');
+    // Construir condiciones para los filtros
+    const conditions = Object.keys(filtros)
+      .filter(key => columns.some(col => col.Field === key))
+      .map(key => `${mysql.escapeId(key)} = ${mysql.escape(filtros[key])}`)
+      .join(' AND ');
 
     if (!conditions) {
       return res.json([]);
