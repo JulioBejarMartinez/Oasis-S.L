@@ -11,6 +11,8 @@ import com.example.APIConecction.ApiClient;
 
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -28,7 +30,11 @@ import javafx.scene.layout.Pane;
 import javafx.util.Callback;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.beans.value.ObservableValue;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.util.Duration;
 
 public class InterfazJardinController {
 
@@ -63,6 +69,12 @@ public class InterfazJardinController {
     private Button borrarButton;
 
     @FXML
+    private Button DatosTiempoReal;
+
+    @FXML
+    private BarChart<String, Number> barChart;
+
+    @FXML
     private TableView<JSONObject> tableView;
 
     private ApiClient apiClient;
@@ -81,6 +93,10 @@ public class InterfazJardinController {
         facturasButton.setOnAction(event -> cargarTabla("Facturas"));
         plantasButton.setOnAction(event -> cargarTabla("Plantas"));
         configuracionesButton.setOnAction(event -> cargarTabla("Configuraciones"));
+        DatosTiempoReal.setOnAction(event -> {
+            cargarDatosTiempoReal();
+            mostrarGraficaTiempoReal(new JSONObject(apiClient.getDatosTiempoReal()));
+        });
         agregarButton.setOnAction(event -> mostrarFormularioAgregar("agregar", null));
         editarButton.setOnAction(event -> {
             JSONObject selectedItem = tableView.getSelectionModel().getSelectedItem();
@@ -767,6 +783,99 @@ public class InterfazJardinController {
         });
     
         cargarTabla(tablaActual);
+    }
+
+    // Funcion para cargar los datos en tiempo real
+    // Se llama a la API para obtener los datos en tiempo real
+    private void cargarDatosTiempoReal() {
+    String response = apiClient.getDatosTiempoReal();
+    
+    if (response == null || response.isEmpty()) {
+        mostrarAlerta("Error", "No se pudieron obtener los datos");
+        return;
+    }
+
+    JSONObject datos = new JSONObject(response);
+    actualizarTablaTiempoReal(datos);
+    mostrarGraficaTiempoReal(datos);
+    iniciarActualizacionAutomatica();
+}
+
+private void actualizarTablaTiempoReal(JSONObject datos) {
+    // Actualizar datos en la tabla existente
+    if (tableView.getItems().isEmpty()) {
+        // Crear columnas dinámicas si la tabla está vacía
+        Iterator<String> keys = datos.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            TableColumn<JSONObject, String> column = new TableColumn<>(key);
+            column.setCellValueFactory(param -> 
+                new SimpleStringProperty(param.getValue().optString(key))
+            );
+            tableView.getColumns().add(column);
+        }
+    }
+
+    // Actualizar o añadir datos
+    if (tableView.getItems().isEmpty()) {
+        tableView.getItems().add(datos);
+    } else {
+        JSONObject existingData = tableView.getItems().get(0);
+        Iterator<String> keys = datos.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            existingData.put(key, datos.get(key));
+        }
+        tableView.refresh();
+    }
+}
+
+    private void iniciarActualizacionAutomatica() {
+        Timeline timeline = new Timeline(
+            new KeyFrame(Duration.seconds(5), 
+            event -> cargarDatosTiempoReal())
+        );
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    private void mostrarGraficaTiempoReal(JSONObject datos) {
+        if (barChart.getData().isEmpty()) {
+            // Crear nueva serie si el gráfico está vacío
+            XYChart.Series<String, Number> series = new XYChart.Series<>();
+            series.setName("Datos actuales");
+    
+            // Definir colores específicos para cada métrica
+            String[] metricas = {"nivelAgua", "humedadSuelo", "humedadAire", "tempC", "posicionServo"};
+            String[] colores = {"#4CAF50", "#2196F3", "#9C27B0", "#FF9800", "#E91E63"};
+    
+            for (int i = 0; i < metricas.length; i++) {
+                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(metricas[i], datos.getDouble(metricas[i]));
+                final String color = colores[i];
+                dataPoint.nodeProperty().addListener((observable, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        newValue.setStyle("-fx-bar-fill: " + color + ";");
+                    }
+                });
+                series.getData().add(dataPoint);
+            }
+    
+            barChart.getData().add(series);
+        } else {
+            // Actualizar datos en la serie existente
+            XYChart.Series<String, Number> series = barChart.getData().get(0);
+            for (XYChart.Data<String, Number> dataPoint : series.getData()) {
+                String metric = dataPoint.getXValue();
+                dataPoint.setYValue(datos.getDouble(metric));
+            }
+        }
+    
+        barChart.setVisible(true);
+        tableView.setVisible(false);
+    
+        // Configuración adicional
+        barChart.setLegendVisible(false);
+        barChart.setCategoryGap(20);
     }
 
     // Funcion encargada de mostrar una alerta en la interfaz

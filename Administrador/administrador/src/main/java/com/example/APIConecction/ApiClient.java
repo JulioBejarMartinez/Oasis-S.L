@@ -138,4 +138,23 @@ public class ApiClient {
         return response;
     }
 
+    // Metodo para obtener los datos de sensores en tiempo real
+    // Retorna un string con los datos de los sensores en tiempo real
+    public String getDatosTiempoReal() {
+        try {
+            String endpoint = API_URL + "sensores/tiempoReal";
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(endpoint))
+                    .GET()
+                    .build();
+    
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }
