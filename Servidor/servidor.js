@@ -536,6 +536,33 @@ app.get('/usuario/:id', async (req, res) => {
   }
 });
 
+app.post('/comprar', async (req, res) => {
+  const { userId, productos } = req.body;
+
+  if (!userId || !productos || productos.length === 0) {
+    return res.status(400).json({ success: false, message: 'Datos incompletos.' });
+  }
+
+  try {
+    // Crear una nueva factura
+    const facturaQuery = 'INSERT INTO Facturas (usuario_id, fecha_emision, monto_total, estado) VALUES (?, NOW(), ?, ?)';
+    const montoTotal = productos.reduce((total, producto) => total + producto.precio, 0);
+    const [facturaResult] = await db.query(facturaQuery, [userId, montoTotal, 'pendiente']);
+
+    const facturaId = facturaResult.insertId;
+
+    // Insertar detalles de la factura
+    const detallesQuery = 'INSERT INTO DetallesFactura (factura_id, producto_id, descripcion, cantidad, precio_unitario) VALUES ?';
+    const detallesValues = productos.map(producto => [facturaId, producto.producto_id, producto.descripcion, 1, producto.precio]);
+    await db.query(detallesQuery, [detallesValues]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error al realizar la compra:', error);
+    res.status(500).json({ success: false, message: 'Error al realizar la compra.' });
+  }
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);

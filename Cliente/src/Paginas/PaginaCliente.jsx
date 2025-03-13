@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { Alert, Card, Row, Col, Badge } from 'react-bootstrap';
 import { RadialBarChart, RadialBar, LineChart, Line, ResponsiveContainer, PolarAngleAxis, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
@@ -11,6 +12,7 @@ function PaginaCliente() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const userId = localStorage.getItem('userId');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -117,7 +119,7 @@ function PaginaCliente() {
       <Card className="shadow-lg border-0 rounded-4" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <Card.Body className="p-4">
           <div className="text-center mb-5">
-            <h1 className="display-5 fw-bold text-primary gradient-text">
+            <h1 className="display-5 fw-bold text-primary ">
               <i className="bi bi-flower1 me-2"></i>
               Tu Jardín Inteligente
             </h1>
@@ -152,7 +154,7 @@ function PaginaCliente() {
                   
                   <Row className="g-4">
                     <Col md={6} className="d-flex">
-                      <div className="bg-light text-primary circle p-1 me-3">
+                      <div className="bg-dark text-white rounded-circle p-3 me-3 shadow-sm">
                         <i className="bi bi-person-fill fs-3"></i>
                       </div>
                       <div>
@@ -162,7 +164,7 @@ function PaginaCliente() {
                     </Col>
                     
                     <Col md={6} className="d-flex">
-                      <div className="bg-light text-primary rounded-circle p-3 me-3">
+                      <div className="bg-dark text-white rounded-circle p-3 me-3 shadow-sm">
                         <i className="bi bi-envelope-fill fs-3"></i>
                       </div>
                       <div>
@@ -172,7 +174,7 @@ function PaginaCliente() {
                     </Col>
                     
                     <Col md={6} className="d-flex">
-                      <div className="bg-light text-primary rounded-circle p-3 me-3">
+                      <div className="bg-dark text-white rounded-circle p-3 me-3 shadow-sm">
                         <i className="bi bi-person-badge-fill fs-3"></i>
                       </div>
                       <div>
@@ -182,7 +184,7 @@ function PaginaCliente() {
                     </Col>
                     
                     <Col md={6} className="d-flex">
-                      <div className="bg-light text-primary rounded-circle p-3 me-3">
+                      <div className="bg-dark text-white rounded-circle p-3 me-3 shadow-sm">
                         <i className="bi bi-calendar-check-fill fs-3"></i>
                       </div>
                       <div>
@@ -193,6 +195,12 @@ function PaginaCliente() {
                           year: 'numeric'
                         })}</h5>
                       </div>
+                    </Col>
+                    <Col md={12} className="text-center mt-3">
+                      <button className="btn btn-outline-primary" onClick={() => navigate('/Tienda')}>
+                        <i className="bi bi-pencil me-2"></i>
+                        Tienda
+                      </button>
                     </Col>
                   </Row>
                 </Card.Body>
