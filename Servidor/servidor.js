@@ -77,8 +77,16 @@ setInterval(async () => {
         timestamp
       });
 
-      // Dentro del setInterval que guarda datos:
-      await setDoc(doc(collection(firestore, "DatosSensores/Globales/registros")), {
+      // Guardar en un único documento para datos históricos
+      const historicoRef = doc(firestore, "DatosSensores", "Globales");
+      const historicoDoc = await getDoc(historicoRef);
+
+      let historicoData = [];
+      if (historicoDoc.exists()) {
+        historicoData = historicoDoc.data().registros || [];
+      }
+
+      historicoData.push({
         nivelAgua: parsedData.nivelAgua,
         humedadSuelo: parsedData.humedadSuelo,
         humedadAire: parsedData.humedadAire,
@@ -86,6 +94,8 @@ setInterval(async () => {
         posicionServo: parsedData.posicionServo,
         timestamp
       });
+
+      await setDoc(historicoRef, { registros: historicoData });
 
       console.log('Datos de sensores guardados en Firebase');
     } catch (error) {
@@ -206,19 +216,19 @@ app.get('/sensores/tiempoReal', async (req, res) => {
 // Modificar el endpoint histórico para incluir conversión
 app.get('/sensores/historico', async (req, res) => {
   try {
-    const veinticuatroHorasAtras = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const historicoRef = collection(firestore, "DatosSensores", "Globales", "registros");
-    
-    const q = query(
-      historicoRef,
-      where("timestamp", ">=", veinticuatroHorasAtras),
-      orderBy("timestamp", "asc")
-    );
+    const historicoRef = doc(firestore, "DatosSensores", "Globales");
+    const historicoDoc = await getDoc(historicoRef);
 
-    const querySnapshot = await getDocs(q);
-    const datos = querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
+    if (!historicoDoc.exists()) {
+      return res.status(404).json({ error: 'No se encontraron datos históricos' });
+    }
+
+    const historicoData = historicoDoc.data().registros || [];
+    const veinticuatroHorasAtras = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const datos = historicoData
+      .filter(data => new Date(data.timestamp) >= veinticuatroHorasAtras)
+      .map(data => ({
         ...data,
         humedadSuelo: (data.humedadSuelo / 1023 * 100).toFixed(1),
         humedadAire: (data.humedadAire / 1023 * 100).toFixed(1),
@@ -226,8 +236,7 @@ app.get('/sensores/historico', async (req, res) => {
           hour: '2-digit',
           minute: '2-digit'
         })
-      };
-    });
+      }));
 
     res.json(datos);
   } catch (error) {

@@ -44,6 +44,11 @@
   background-size: cover;
   height: 100vh;
   width: 100%;
+  display: flex;
+}
+
+.full-background * {
+  background: transparent;
 }
 
 /* Ajustes para el tema Solar */
