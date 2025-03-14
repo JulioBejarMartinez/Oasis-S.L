@@ -538,28 +538,110 @@ app.get('/usuario/:id', async (req, res) => {
 
 app.post('/comprar', async (req, res) => {
   const { userId, productos } = req.body;
-
-  if (!userId || !productos || productos.length === 0) {
-    return res.status(400).json({ success: false, message: 'Datos incompletos.' });
-  }
-
+  
   try {
-    // Crear una nueva factura
-    const facturaQuery = 'INSERT INTO Facturas (usuario_id, fecha_emision, monto_total, estado) VALUES (?, NOW(), ?, ?)';
-    const montoTotal = productos.reduce((total, producto) => total + producto.precio, 0);
-    const [facturaResult] = await db.query(facturaQuery, [userId, montoTotal, 'pendiente']);
-
-    const facturaId = facturaResult.insertId;
-
-    // Insertar detalles de la factura
-    const detallesQuery = 'INSERT INTO DetallesFactura (factura_id, producto_id, descripcion, cantidad, precio_unitario) VALUES ?';
-    const detallesValues = productos.map(producto => [facturaId, producto.producto_id, producto.descripcion, 1, producto.precio]);
-    await db.query(detallesQuery, [detallesValues]);
-
-    res.json({ success: true });
+    // Verificar si hay productos
+    if (!productos || productos.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No hay productos en el carrito' 
+      });
+    }
+    
+    // Verificar stock y bloquear productos
+    // Modificado para usar callback en lugar de promesas con db.query
+    db.query(
+      'SELECT producto_id, stock FROM Productos WHERE producto_id IN (?)',
+      [productos.map(p => p.producto_id)], 
+      (err, stockResults) => {
+        if (err) {
+          console.error('Error al verificar stock:', err);
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Error al verificar disponibilidad de productos' 
+          });
+        }
+        
+        // Verificar que hay stock disponible
+        const sinStock = productos.filter(p => {
+          const stockItem = stockResults.find(s => s.producto_id === p.producto_id);
+          return !stockItem || stockItem.stock < 1;
+        });
+        
+        if (sinStock.length > 0) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Productos sin stock: ${sinStock.map(p => p.nombre).join(', ')}` 
+          });
+        }
+        
+        // Crear factura
+        const montoTotal = productos.reduce((total, p) => total + parseFloat(p.precio), 0);
+        db.query(
+          'INSERT INTO Facturas SET ?', 
+          { usuario_id: userId, fecha_emision: new Date(), monto_total: montoTotal, estado: 'pendiente' },
+          (err, facturaResult) => {
+            if (err) {
+              console.error('Error al crear factura:', err);
+              return res.status(500).json({ 
+                success: false, 
+                message: 'Error al procesar la factura' 
+              });
+            }
+            
+            // Preparar los valores para detalles de factura
+            const detallesValues = productos.map(p => [
+              facturaResult.insertId, 
+              p.producto_id, 
+              p.descripcion || p.nombre, 
+              1, 
+              parseFloat(p.precio)
+            ]);
+            
+            // Insertar detalles de factura
+            db.query(
+              'INSERT INTO DetallesFactura (factura_id, producto_id, descripcion, cantidad, precio_unitario) VALUES ?',
+              [detallesValues],
+              (err) => {
+                if (err) {
+                  console.error('Error al insertar detalles:', err);
+                  return res.status(500).json({ 
+                    success: false, 
+                    message: 'Error al registrar detalles de la compra' 
+                  });
+                }
+                
+                // Actualizar stock
+                const productoIds = productos.map(p => p.producto_id);
+                db.query(
+                  'UPDATE Productos SET stock = stock - 1 WHERE producto_id IN (?)',
+                  [productoIds],
+                  (err) => {
+                    if (err) {
+                      console.error('Error al actualizar stock:', err);
+                      return res.status(500).json({ 
+                        success: false, 
+                        message: 'Error al actualizar inventario' 
+                      });
+                    }
+                    
+                    // Todo correcto
+                    res.json({ 
+                      success: true,
+                      facturaId: facturaResult.insertId,
+                      message: 'Compra realizada con éxito'
+                    });
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
   } catch (error) {
-    console.error('Error al realizar la compra:', error);
-    res.status(500).json({ success: false, message: 'Error al realizar la compra.' });
+    console.error('Error en compra:', error);
+    res.status(500).json({ success: false, message: 'Error al procesar la compra' });
   }
 });
 

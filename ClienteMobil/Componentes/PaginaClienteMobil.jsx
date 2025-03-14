@@ -17,12 +17,12 @@ const PaginaClienteMobil = () => {
       const userId = await AsyncStorage.getItem('userId');
       
       // Obtener datos del usuario y sus jardines
-      const userResponse = await axios.get(`http://192.168.1.57:3000/usuario/${userId}`);
+      const userResponse = await axios.get(`http://192.168.1.37:3000/usuario/${userId}`);
       setUserData(userResponse.data.user);
       setGardens(userResponse.data.gardens);
 
       // Obtener datos de sensores en tiempo real
-      const sensorResponse = await axios.get('http://192.168.1.57:3000/sensores/tiempoReal');
+      const sensorResponse = await axios.get('http://192.168.1.37:3000/sensores/tiempoReal');
       setSensorData(sensorResponse.data);
 
     } catch (error) {
