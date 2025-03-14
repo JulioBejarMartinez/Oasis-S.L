@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Card, Row, Col, Badge } from 'react-bootstrap';
+import { Alert, Card, Row, Col, Badge, Form, Button, Modal } from 'react-bootstrap';
 import { RadialBarChart, RadialBar, LineChart, Line, ResponsiveContainer, PolarAngleAxis, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 function PaginaCliente() {
@@ -13,6 +13,13 @@ function PaginaCliente() {
   const [error, setError] = useState('');
   const userId = localStorage.getItem('userId');
   const navigate = useNavigate();
+  
+  // Estado para el formulario de edición
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editFormData, setEditFormData] = useState({ nombre: '', email: '' });
+  const [updating, setUpdating] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [updateError, setUpdateError] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -20,6 +27,11 @@ function PaginaCliente() {
         if (!userId) throw new Error('No se encontró ID de usuario');
         const response = await axios.get(`http://localhost:3000/usuario/${userId}`);
         setUserData(response.data.user);
+        // Inicializar el formulario con los datos actuales
+        setEditFormData({
+          nombre: response.data.user.nombre,
+          email: response.data.user.email
+        });
         setGardens(response.data.gardens || []);
       } catch (error) {
         setError(`Error al cargar datos: ${error.message}`);
@@ -64,6 +76,46 @@ function PaginaCliente() {
 
     return () => clearInterval(sensorInterval);
   }, [userId]);
+
+  // Función para manejar cambios en el formulario
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Función para enviar el formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+    setUpdateError('');
+    setUpdateSuccess(false);
+    
+    try {
+      const response = await axios.put(`http://localhost:3000/usuario/${userId}`, editFormData);
+      
+      if (response.data.success) {
+        // Actualizar el estado local con los nuevos datos
+        setUserData(prev => ({
+          ...prev,
+          ...editFormData
+        }));
+        setUpdateSuccess(true);
+        
+        // Cerrar el modal después de 1.5 segundos
+        setTimeout(() => {
+          setShowEditForm(false);
+          setUpdateSuccess(false);
+        }, 1500);
+      }
+    } catch (error) {
+      setUpdateError(`Error al actualizar: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const renderGauge = (value, max, title, color, unit = '', icon) => {
     const data = [{ value: Math.min(value, max), fill: color }];
@@ -114,8 +166,89 @@ function PaginaCliente() {
     );
   };
 
+  // Modal para editar datos
+  const renderEditModal = () => (
+    <Modal 
+      show={showEditForm} 
+      onHide={() => setShowEditForm(false)}
+      centered
+      backdrop="static"
+    >
+      <Modal.Header closeButton className="bg-light">
+        <Modal.Title>
+          <i className="bi bi-pencil-square me-2"></i>
+          Editar Datos de Usuario
+        </Modal.Title>
+      </Modal.Header>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Body>
+          {updateSuccess && (
+            <Alert variant="success" className="mb-3">
+              <i className="bi bi-check-circle me-2"></i>
+              ¡Datos actualizados correctamente!
+            </Alert>
+          )}
+          
+          {updateError && (
+            <Alert variant="danger" className="mb-3">
+              <i className="bi bi-exclamation-triangle me-2"></i>
+              {updateError}
+            </Alert>
+          )}
+          
+          <Form.Group className="mb-3">
+            <Form.Label>Nombre</Form.Label>
+            <Form.Control
+              type="text"
+              name="nombre"
+              value={editFormData.nombre}
+              onChange={handleInputChange}
+              required
+              disabled={updating}
+            />
+          </Form.Group>
+          
+          <Form.Group className="mb-3">
+            <Form.Label>Email</Form.Label>
+            <Form.Control
+              type="email"
+              name="email"
+              value={editFormData.email}
+              onChange={handleInputChange}
+              required
+              disabled={updating}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer className="bg-light">
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowEditForm(false)}
+            disabled={updating}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            variant="primary" 
+            type="submit"
+            disabled={updating}
+          >
+            {updating ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Actualizando...
+              </>
+            ) : 'Guardar Cambios'}
+          </Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
+  );
+
   return (
     <div className="container mt-4 mb-5">
+      {renderEditModal()}
+      
       <Card className="shadow-lg border-0 rounded-4" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <Card.Body className="p-4">
           <div className="text-center mb-5">
@@ -125,7 +258,7 @@ function PaginaCliente() {
             </h1>
             <p className="lead text-muted">Monitorea y controla tus espacios verdes</p>
           </div>
-  
+
           {loading && (
             <div className="text-center my-5 py-5">
               <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
@@ -134,22 +267,32 @@ function PaginaCliente() {
               <p className="mt-3 text-muted">Cargando tus datos...</p>
             </div>
           )}
-  
+
           {error && (
             <Alert variant="danger" className="text-center my-4 shadow-sm">
               <i className="bi bi-exclamation-triangle me-2"></i>
               {error}
             </Alert>
           )}
-  
+
           {userData && (
             <>
               {/* Sección Perfil de Usuario */}
               <Card className="mb-4 shadow-sm border-0 bg-light">
                 <Card.Body className="p-4">
-                  <Card.Title as="h2" className="mb-4 text-primary border-bottom pb-2">
-                    <i className="bi bi-person-circle me-2"></i>
-                    Perfil de Usuario
+                  <Card.Title as="h2" className="mb-4 text-primary border-bottom pb-2 d-flex justify-content-between align-items-center">
+                    <div>
+                      <i className="bi bi-person-circle me-2"></i>
+                      Perfil de Usuario
+                    </div>
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm"
+                      onClick={() => setShowEditForm(true)}
+                    >
+                      <i className="bi bi-pencil-square me-2"></i>
+                      Editar Perfil
+                    </Button>
                   </Card.Title>
                   
                   <Row className="g-4">
@@ -205,7 +348,7 @@ function PaginaCliente() {
                   </Row>
                 </Card.Body>
               </Card>
-  
+
               {/* Sección Sensores */}
               {sensorData ? (
                 <>
@@ -215,9 +358,8 @@ function PaginaCliente() {
                         <i className="bi bi-speedometer2 me-2"></i>
                         Monitoreo en Tiempo Real
                       </Card.Title>
-  
+
                       <Row className="g-4">
-                        {/* Gauges */}
                         <Col md={6} lg={3}>
                           <Card className="h-100 border-0 shadow-sm hover-card">
                             <Card.Body>
@@ -225,7 +367,7 @@ function PaginaCliente() {
                             </Card.Body>
                           </Card>
                         </Col>
-  
+
                         <Col md={6} lg={3}>
                           <Card className="h-100 border-0 shadow-sm hover-card">
                             <Card.Body>
@@ -233,7 +375,7 @@ function PaginaCliente() {
                             </Card.Body>
                           </Card>
                         </Col>
-  
+
                         <Col md={6} lg={3}>
                           <Card className="h-100 border-0 shadow-sm hover-card">
                             <Card.Body>
@@ -241,7 +383,7 @@ function PaginaCliente() {
                             </Card.Body>
                           </Card>
                         </Col>
-  
+
                         <Col md={6} lg={3}>
                           <Card className="h-100 border-0 shadow-sm hover-card">
                             <Card.Body className="text-center d-flex flex-column justify-content-center">
@@ -262,7 +404,7 @@ function PaginaCliente() {
                       </Row>
                     </Card.Body>
                   </Card>
-  
+
                   {/* Gráfico Histórico */}
                   <Card className="mb-4 shadow-sm border-0 bg-light">
                     <Card.Body className="p-4">
@@ -361,7 +503,7 @@ function PaginaCliente() {
                   </div>
                 </Alert>
               )}
-  
+
               {/* Sección Jardines */}
               <Card className="shadow-sm border-0 bg-light">
                 <Card.Body className="p-4">
@@ -369,7 +511,7 @@ function PaginaCliente() {
                     <i className="bi bi-flower2 me-2"></i>
                     Tus Jardines Inteligentes
                   </Card.Title>
-  
+
                   {gardens.length > 0 ? (
                     <Row className="row-cols-1 row-cols-md-2 g-4">
                       {gardens.map((garden) => (
@@ -448,7 +590,7 @@ function PaginaCliente() {
           )}
         </Card.Body>
       </Card>
-  
+
       <style jsx>{`
         .gradient-text {
           background: linear-gradient(45deg, #1a8754, #17a2b8);

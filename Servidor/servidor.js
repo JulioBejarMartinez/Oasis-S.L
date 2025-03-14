@@ -536,6 +536,42 @@ app.get('/usuario/:id', async (req, res) => {
   }
 });
 
+// Endpoint para actualizar datos del usuario
+app.put('/usuario/:id', async (req, res) => {
+  const userId = req.params.id;
+  const { nombre, email } = req.body;
+  
+  try {
+    // Actualizar en MySQL
+    const query = 'UPDATE Usuarios SET nombre = ?, email = ? WHERE usuario_id = ?';
+    
+    db.query(query, [nombre, email, userId], async (err, results) => {
+      if (err) {
+        console.error('Error al actualizar usuario:', err);
+        return res.status(500).json({ error: 'Error al actualizar datos del usuario' });
+      }
+      
+      // Actualizar en Firebase
+      try {
+        await syncFirebase.Usuarios.update(userId, { nombre, email });
+        res.json({ 
+          success: true, 
+          message: 'Datos actualizados correctamente',
+          usuario: { nombre, email, id: userId }
+        });
+      } catch (firebaseError) {
+        console.error('Error Firebase:', firebaseError);
+        res.status(500).json({ 
+          error: 'Registro actualizado en MySQL pero falló en Firebase'
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error al actualizar usuario:', error);
+    res.status(500).json({ error: 'Error al actualizar datos del usuario' });
+  }
+});
+
 app.post('/comprar', async (req, res) => {
   const { userId, productos } = req.body;
   
