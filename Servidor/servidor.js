@@ -681,6 +681,21 @@ app.post('/comprar', async (req, res) => {
   }
 });
 
+app.get('/jardin/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const gardenDoc = await getDoc(doc(firestore, `users/${req.query.userId}/gardens`, id));
+    if (!gardenDoc.exists()) {
+      return res.status(404).json({ error: 'Jardín no encontrado' });
+    }
+    res.json({ id, ...gardenDoc.data() });
+  } catch (error) {
+    console.error('Error al obtener detalles del jardín:', error);
+    res.status(500).json({ error: 'Error al obtener detalles del jardín' });
+  }
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);

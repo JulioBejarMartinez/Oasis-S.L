@@ -557,7 +557,7 @@ function PaginaCliente() {
                               </div>
                               
                               <div className="garden-actions mt-4 pt-3 border-top">
-                                <button className="btn btn-outline-primary me-2">
+                                <button className="btn btn-outline-primary me-2" onClick={() => navigate(`/DetallesJardin/${garden.id}`)}>
                                   <i className="bi bi-graph-up me-2"></i>
                                   Detalles
                                 </button>
@@ -591,7 +591,7 @@ function PaginaCliente() {
         </Card.Body>
       </Card>
 
-      <style jsx>{`
+      <style jsx="true">{`
         .gradient-text {
           background: linear-gradient(45deg, #1a8754, #17a2b8);
           -webkit-background-clip: text;

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './Paginas/Login'
 import PaginaCliente from './Paginas/PaginaCliente';
 import Tienda from './Paginas/Tienda';
+import DetallesJardin from './Paginas/DetallesJardin';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import 'bootswatch/dist/solar/bootstrap.min.css';
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/PaginaCliente" element={<PaginaCliente />} />
         <Route path="/Tienda" element={<Tienda />} />
+        <Route path="/DetallesJardin/:id" element={<DetallesJardin />} />
       </Routes>
     </Router>
     </div>
