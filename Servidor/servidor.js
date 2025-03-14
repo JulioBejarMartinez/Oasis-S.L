@@ -696,6 +696,79 @@ app.get('/jardin/:id', async (req, res) => {
   }
 });
 
+app.get('/jardin/:id/configuracion', async (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT c.* 
+    FROM Jardines j
+    INNER JOIN Configuraciones c ON j.configuracion_id = c.configuracion_id
+    WHERE j.jardin_id = ?
+  `;
+
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error al obtener configuración del jardín:', err);
+      return res.status(500).json({ error: 'Error al obtener configuración del jardín' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Configuración no encontrada' });
+    }
+
+    res.json(results[0]);
+  });
+});
+
+app.put('/jardin/:id/configuracion', async (req, res) => {
+  const { id } = req.params;
+  const {
+    temp_min,
+    temp_max,
+    humedad_amb_min,
+    humedad_amb_max,
+    humedad_suelo_min,
+    humedad_suelo_max,
+    nivel_agua_min,
+  } = req.body;
+
+  const query = `
+    UPDATE Configuraciones c
+    INNER JOIN Jardines j ON j.configuracion_id = c.configuracion_id
+    SET 
+      c.temp_min = ?, 
+      c.temp_max = ?, 
+      c.humedad_amb_min = ?, 
+      c.humedad_amb_max = ?, 
+      c.humedad_suelo_min = ?, 
+      c.humedad_suelo_max = ?, 
+      c.nivel_agua_min = ?
+    WHERE j.jardin_id = ?
+  `;
+
+  db.query(
+    query,
+    [
+      temp_min,
+      temp_max,
+      humedad_amb_min,
+      humedad_amb_max,
+      humedad_suelo_min,
+      humedad_suelo_max,
+      nivel_agua_min,
+      id,
+    ],
+    (err, results) => {
+      if (err) {
+        console.error('Error al actualizar configuración del jardín:', err);
+        return res.status(500).json({ error: 'Error al actualizar configuración del jardín' });
+      }
+
+      res.json({ message: 'Configuración actualizada correctamente' });
+    }
+  );
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
