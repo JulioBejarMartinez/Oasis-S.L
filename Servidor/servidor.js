@@ -572,6 +572,7 @@ app.put('/usuario/:id', async (req, res) => {
   }
 });
 
+// Endpoint para comprar productos
 app.post('/comprar', async (req, res) => {
   const { userId, productos } = req.body;
   
@@ -585,7 +586,6 @@ app.post('/comprar', async (req, res) => {
     }
     
     // Verificar stock y bloquear productos
-    // Modificado para usar callback en lugar de promesas con db.query
     db.query(
       'SELECT producto_id, stock FROM Productos WHERE producto_id IN (?)',
       [productos.map(p => p.producto_id)], 
@@ -638,7 +638,7 @@ app.post('/comprar', async (req, res) => {
             db.query(
               'INSERT INTO DetallesFactura (factura_id, producto_id, descripcion, cantidad, precio_unitario) VALUES ?',
               [detallesValues],
-              (err) => {
+              async (err) => {
                 if (err) {
                   console.error('Error al insertar detalles:', err);
                   return res.status(500).json({ 
@@ -652,12 +652,32 @@ app.post('/comprar', async (req, res) => {
                 db.query(
                   'UPDATE Productos SET stock = stock - 1 WHERE producto_id IN (?)',
                   [productoIds],
-                  (err) => {
+                  async (err) => {
                     if (err) {
                       console.error('Error al actualizar stock:', err);
                       return res.status(500).json({ 
                         success: false, 
                         message: 'Error al actualizar inventario' 
+                      });
+                    }
+                    
+                    // Agregar productos comprados a Firebase
+                    try {
+                      const userCartRef = collection(firestore, `users/${userId}/compras`);
+                      for (const producto of productos) {
+                        await setDoc(doc(userCartRef, producto.producto_id.toString()), {
+                          nombre: producto.nombre,
+                          descripcion: producto.descripcion || producto.nombre,
+                          precio: producto.precio,
+                          fecha_compra: new Date().toISOString()
+                        });
+                      }
+                      console.log('Productos comprados sincronizados en Firebase');
+                    } catch (firebaseError) {
+                      console.error('Error al sincronizar productos en Firebase:', firebaseError);
+                      return res.status(500).json({ 
+                        success: false, 
+                        message: 'Error al sincronizar productos en Firebase' 
                       });
                     }
                     
@@ -681,21 +701,36 @@ app.post('/comprar', async (req, res) => {
   }
 });
 
+// Endpoint para obtener los jardines del usuario
 app.get('/jardin/:id', async (req, res) => {
   const { id } = req.params;
+  const userId = req.query.userId;
 
   try {
-    const gardenDoc = await getDoc(doc(firestore, `users/${req.query.userId}/gardens`, id));
+    // Obtener datos del jardín desde Firebase
+    const gardenDoc = await getDoc(doc(firestore, `users/${userId}/gardens`, id));
     if (!gardenDoc.exists()) {
       return res.status(404).json({ error: 'Jardín no encontrado' });
     }
-    res.json({ id, ...gardenDoc.data() });
+    const gardenData = gardenDoc.data();
+
+    // Obtener productos comprados relacionados con el usuario
+    const comprasQuery = query(collection(firestore, `users/${userId}/compras`));
+    const comprasSnapshot = await getDocs(comprasQuery);
+    const productosComprados = comprasSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // Responder con los datos del jardín y los productos comprados
+    res.json({ ...gardenData, productosComprados });
   } catch (error) {
     console.error('Error al obtener detalles del jardín:', error);
     res.status(500).json({ error: 'Error al obtener detalles del jardín' });
   }
 });
 
+// Endpoint para obtener la configuracion del jardin
 app.get('/jardin/:id/configuracion', async (req, res) => {
   const { id } = req.params;
 
@@ -720,6 +755,7 @@ app.get('/jardin/:id/configuracion', async (req, res) => {
   });
 });
 
+// Endpoint para actualizar la configuración de un jardín
 app.put('/jardin/:id/configuracion', async (req, res) => {
   const { id } = req.params;
   const {

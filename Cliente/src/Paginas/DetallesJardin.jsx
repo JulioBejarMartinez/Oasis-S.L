@@ -245,6 +245,57 @@ function DetallesJardin() {
               </Card>
             </Col>
           </Row>
+
+          {/* Nueva sección para mostrar productos comprados */}
+          <Card className="border-0 shadow-sm mt-4">
+            <Card.Body className="p-4">
+              <h4 className="text-success mb-4">
+                <i className="bi bi-cart-check-fill me-2"></i>
+                Productos Comprados para este Jardín
+              </h4>
+
+              {garden.productosComprados && garden.productosComprados.length > 0 ? (
+                <Row className="g-4">
+                  {garden.productosComprados.map((producto) => (
+                    <Col md={4} key={producto.id}>
+                      <Card className="h-100 hover-card border-0 shadow-sm">
+                        <Card.Body>
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="card-title mb-0">{producto.nombre}</h5>
+                            <Badge bg="info" pill>
+                              {new Date(producto.fecha_compra).toLocaleDateString('es-ES')}
+                            </Badge>
+                          </div>
+                          <Card.Text className="text-muted">
+                            {producto.descripcion}
+                          </Card.Text>
+                          <div className="d-flex justify-content-between align-items-center mt-3">
+                            <Badge bg="success" className="px-3 py-2">
+                              {parseFloat(producto.precio).toFixed(2)} €
+                            </Badge>
+                            <i className={`bi ${producto.nombre.toLowerCase().includes('planta') ? 'bi-flower1' : 'bi-tools'} text-primary fs-4`}></i>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              ) : (
+                <Alert variant="light" className="text-center py-4">
+                  <i className="bi bi-bag-x text-muted fs-1 d-block mb-3"></i>
+                  <p className="mb-0">No hay productos comprados para este jardín.</p>
+                  <Button 
+                    variant="outline-primary" 
+                    className="mt-3 rounded-pill"
+                    onClick={() => navigate('/tienda')}
+                  >
+                    <i className="bi bi-shop me-2"></i>
+                    Ir a la Tienda
+                  </Button>
+                </Alert>
+              )}
+            </Card.Body>
+          </Card>
         </Card.Body>
       </Card>
 
