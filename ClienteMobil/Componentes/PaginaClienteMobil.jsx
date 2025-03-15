@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Modal, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-
-const PaginaClienteMobil = () => {
+const PaginaClienteMobil = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
   const [sensorData, setSensorData] = useState(null);
   const [gardens, setGardens] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editFormData, setEditFormData] = useState({ nombre: '', email: '' });
+  const [updating, setUpdating] = useState(false);
 
   // Obtener datos del usuario y sensores
   const fetchData = async () => {
@@ -17,12 +19,18 @@ const PaginaClienteMobil = () => {
       const userId = await AsyncStorage.getItem('userId');
       
       // Obtener datos del usuario y sus jardines
-      const userResponse = await axios.get(`http://192.168.1.37:3000/usuario/${userId}`);
+      const userResponse = await axios.get(`http://192.168.1.38:3000/usuario/${userId}`);
       setUserData(userResponse.data.user);
       setGardens(userResponse.data.gardens);
 
+      // Inicializar el formulario con los datos actuales
+      setEditFormData({
+        nombre: userResponse.data.user.nombre,
+        email: userResponse.data.user.email,
+      });
+
       // Obtener datos de sensores en tiempo real
-      const sensorResponse = await axios.get('http://192.168.1.37:3000/sensores/tiempoReal');
+      const sensorResponse = await axios.get('http://192.168.1.38:3000/sensores/tiempoReal');
       setSensorData(sensorResponse.data);
 
     } catch (error) {
@@ -44,6 +52,36 @@ const PaginaClienteMobil = () => {
     setRefreshing(false);
   };
 
+  // Manejar cambios en el formulario de edición
+  const handleInputChange = (name, value) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Enviar datos actualizados al servidor
+  const handleSubmit = async () => {
+    setUpdating(true);
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const response = await axios.put(`http://192.168.1.38:3000/usuario/${userId}`, editFormData);
+      if (response.data.success) {
+        setUserData((prev) => ({
+          ...prev,
+          ...editFormData,
+        }));
+        Alert.alert('Éxito', 'Datos actualizados correctamente');
+        setEditModalVisible(false);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo actualizar los datos');
+      console.error('Error updating user data:', error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <ScrollView 
       contentContainerStyle={styles.container}
@@ -53,6 +91,59 @@ const PaginaClienteMobil = () => {
     >
       <Text style={styles.header}>Bienvenido, {userData?.nombre}</Text>
       
+      {/* Botón para editar datos del usuario */}
+      <Button title="Editar Perfil" onPress={() => setEditModalVisible(true)} />
+
+      {/* Botón para acceder a la tienda */}
+      <TouchableOpacity
+        style={styles.storeButton}
+        onPress={() => navigation.navigate('TiendaMobil')}
+      >
+        <Text style={styles.storeButtonText}>Ir a la Tienda</Text>
+      </TouchableOpacity>
+
+      {/* Modal para editar datos */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Perfil</Text>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre"
+              value={editFormData.nombre}
+              onChangeText={(text) => handleInputChange('nombre', text)}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={editFormData.email}
+              onChangeText={(text) => handleInputChange('email', text)}
+              keyboardType="email-address"
+            />
+
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancelar"
+                onPress={() => setEditModalVisible(false)}
+                color="#e74c3c"
+              />
+              <Button
+                title={updating ? 'Guardando...' : 'Guardar'}
+                onPress={handleSubmit}
+                disabled={updating}
+                color="#2ecc71"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Tarjeta de Estado General */}
       <View style={styles.statusCard}>
         <MaterialCommunityIcons name="leaf" size={24} color="#2ecc71" />
@@ -253,10 +344,35 @@ const styles = StyleSheet.create({
   inactiveStatus: {
     backgroundColor: '#e74c3c',
   },
-  statusText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
 
