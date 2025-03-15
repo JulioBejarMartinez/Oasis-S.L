@@ -210,6 +210,13 @@ const PaginaClienteMobil = ({ navigation }) => {
               </Text>
             </View>
           </View>
+          {/* Botón para acceder a los detalles del jardín */}
+          <TouchableOpacity
+            style={styles.detailsButton}
+            onPress={() => navigation.navigate('DetallesJardinMobil', { id: garden.id })}
+          >
+            <Text style={styles.detailsButtonText}>Ver Detalles</Text>
+          </TouchableOpacity>
         </View>
       ))}
     </ScrollView>
