@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Modal, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Modal, TextInput, Button, Alert, TouchableOpacity, Dimensions } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 const PaginaClienteMobil = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
@@ -86,21 +88,111 @@ const PaginaClienteMobil = ({ navigation }) => {
     <ScrollView 
       contentContainerStyle={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh}
+          colors={['#2ecc71']}
+          tintColor="#2ecc71"
+        />
       }
     >
-      <Text style={styles.header}>Bienvenido, {userData?.nombre}</Text>
-      
-      {/* Botón para editar datos del usuario */}
-      <Button title="Editar Perfil" onPress={() => setEditModalVisible(true)} />
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Bienvenido, {userData?.nombre}</Text>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={[styles.iconButton, styles.editButton]}
+            onPress={() => setEditModalVisible(true)}
+          >
+            <MaterialCommunityIcons name="account-edit" size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconButton, styles.storeButton]}
+            onPress={() => navigation.navigate('TiendaMobil')}
+          >
+            <MaterialCommunityIcons name="store" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      {/* Botón para acceder a la tienda */}
-      <TouchableOpacity
-        style={styles.storeButton}
-        onPress={() => navigation.navigate('TiendaMobil')}
-      >
-        <Text style={styles.storeButtonText}>Ir a la Tienda</Text>
-      </TouchableOpacity>
+      {/* Tarjeta de Estado General Mejorada */}
+      <View style={styles.statusCard}>
+        <View style={styles.statusIconContainer}>
+          <MaterialCommunityIcons name="leaf" size={32} color="white" />
+        </View>
+        <View style={styles.statusTextContainer}>
+          <Text style={styles.statusTitle}>Estado del Sistema</Text>
+          <Text style={styles.statusSubtitle}>Todo funciona correctamente</Text>
+        </View>
+      </View>
+
+      {/* Sensores Mejorados */}
+      <Text style={styles.sectionTitle}>Monitorización en Tiempo Real</Text>
+      <View style={styles.sensorsGrid}>
+        {[
+          { key: 'tempC', icon: 'thermometer', label: 'Temperatura', unit: '°C', color: '#e74c3c' },
+          { key: 'humedadAire', icon: 'water-percent', label: 'Humedad Aire', unit: '%', color: '#3498db' },
+          { key: 'humedadSuelo', icon: 'flower', label: 'Humedad Suelo', unit: '%', color: '#27ae60' },
+          { key: 'nivelAgua', icon: 'water', label: 'Nivel de Agua', unit: '%', color: '#2980b9' },
+        ].map((sensor, index) => (
+          <View 
+            key={sensor.key}
+            style={[
+              styles.sensorCard, 
+              { 
+                borderLeftWidth: 6, 
+                borderLeftColor: sensor.color,
+                width: '48%', // Ancho ajustado para 2 columnas
+                aspectRatio: 1, // Mantener relación cuadrada
+              }
+            ]}
+          >
+            <MaterialCommunityIcons 
+              name={sensor.icon} 
+              size={32} 
+              color={sensor.color} 
+              style={styles.sensorIcon}
+            />
+            <Text style={styles.sensorValue}>
+              {sensorData?.[sensor.key]?.toFixed(1) || '--'}{sensor.unit}
+            </Text>
+            <Text style={styles.sensorLabel}>{sensor.label}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Sección de Jardines */}
+      <Text style={styles.sectionTitle}>Tus Jardines</Text>
+      {gardens.map((garden) => (
+        <View key={garden.id} style={styles.gardenCard}>
+          <View style={styles.gardenHeader}>
+            <MaterialCommunityIcons name="sprout" size={20} color="#27ae60" />
+            <Text style={styles.gardenTitle}>Jardín {garden.configuracion_id}</Text>
+          </View>
+          
+          <View style={styles.gardenInfoRow}>
+            <MaterialCommunityIcons name="map-marker" size={16} color="#7f8c8d" />
+            <Text style={styles.gardenText}>{garden.ubicacion}</Text>
+          </View>
+          
+          <View style={styles.gardenStatus}>
+            <View style={[
+              styles.statusIndicator,
+              garden.estado_riego === 'regando' ? styles.activeStatus : styles.inactiveStatus
+            ]}>
+              <Text style={styles.statusText}>
+                {garden.estado_riego === 'regando' ? 'Activo' : 'Inactivo'}
+              </Text>
+            </View>
+          </View>
+          {/* Botón para acceder a los detalles del jardín */}
+          <TouchableOpacity
+            style={styles.detailsButton}
+            onPress={() => navigation.navigate('DetallesJardinMobil', { id: garden.id })}
+          >
+            <Text style={styles.detailsButtonText}>Ver Detalles</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
 
       {/* Modal para editar datos */}
       <Modal
@@ -143,97 +235,76 @@ const PaginaClienteMobil = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-
-      {/* Tarjeta de Estado General */}
-      <View style={styles.statusCard}>
-        <MaterialCommunityIcons name="leaf" size={24} color="#2ecc71" />
-        <Text style={styles.statusText}>Estado del Jardín: Normal</Text>
-      </View>
-
-      {/* Sección de Sensores */}
-      <Text style={styles.sectionTitle}>Monitorización en Tiempo Real</Text>
-      <View style={styles.sensorsGrid}>
-        <View style={[styles.sensorCard, styles.temperatureCard]}>
-          <MaterialCommunityIcons name="thermometer" size={32} color="#e74c3c" />
-          <Text style={styles.sensorValue}>
-            {sensorData?.tempC?.toFixed(1) || '--'}°C
-          </Text>
-          <Text style={styles.sensorLabel}>Temperatura</Text>
-        </View>
-
-        <View style={[styles.sensorCard, styles.humidityCard]}>
-          <MaterialCommunityIcons name="water-percent" size={32} color="#3498db" />
-          <Text style={styles.sensorValue}>
-            {sensorData?.humedadAire?.toFixed(1) || '--'}%
-          </Text>
-          <Text style={styles.sensorLabel}>Humedad Aire</Text>
-        </View>
-
-        <View style={[styles.sensorCard, styles.soilCard]}>
-          <MaterialCommunityIcons name="flower" size={32} color="#27ae60" />
-          <Text style={styles.sensorValue}>
-            {sensorData?.humedadSuelo?.toFixed(1) || '--'}%
-          </Text>
-          <Text style={styles.sensorLabel}>Humedad Suelo</Text>
-        </View>
-
-        <View style={[styles.sensorCard, styles.waterCard]}>
-          <MaterialCommunityIcons name="water" size={32} color="#2980b9" />
-          <Text style={styles.sensorValue}>
-            {sensorData?.nivelAgua?.toFixed(1) || '--'}%
-          </Text>
-          <Text style={styles.sensorLabel}>Nivel de Agua</Text>
-        </View>
-      </View>
-
-      {/* Sección de Jardines */}
-      <Text style={styles.sectionTitle}>Tus Jardines</Text>
-      {gardens.map((garden) => (
-        <View key={garden.id} style={styles.gardenCard}>
-          <View style={styles.gardenHeader}>
-            <MaterialCommunityIcons name="sprout" size={20} color="#27ae60" />
-            <Text style={styles.gardenTitle}>Jardín {garden.configuracion_id}</Text>
-          </View>
-          
-          <View style={styles.gardenInfoRow}>
-            <MaterialCommunityIcons name="map-marker" size={16} color="#7f8c8d" />
-            <Text style={styles.gardenText}>{garden.ubicacion}</Text>
-          </View>
-          
-          <View style={styles.gardenStatus}>
-            <View style={[
-              styles.statusIndicator,
-              garden.estado_riego === 'regando' ? styles.activeStatus : styles.inactiveStatus
-            ]}>
-              <Text style={styles.statusText}>
-                {garden.estado_riego === 'regando' ? 'Activo' : 'Inactivo'}
-              </Text>
-            </View>
-          </View>
-          {/* Botón para acceder a los detalles del jardín */}
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => navigation.navigate('DetallesJardinMobil', { id: garden.id })}
-          >
-            <Text style={styles.detailsButtonText}>Ver Detalles</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#f5f6fa',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
   },
   header: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#2c3e50',
+    flex: 1,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+  },
+  editButton: {
+    backgroundColor: '#2ecc71',
+  },
+  storeButton: {
+    backgroundColor: '#e67e22',
+  },
+  statusCard: {
+    flexDirection: 'row',
+    backgroundColor: '#2ecc71',
+    borderRadius: 15,
+    padding: 20,
     marginBottom: 20,
-    textAlign: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  statusIconContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 15,
+  },
+  statusTextContainer: {
+    flex: 1,
+  },
+  statusTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statusSubtitle: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
   },
   sectionTitle: {
     fontSize: 18,
@@ -242,60 +313,30 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     marginLeft: 8,
   },
-  statusCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  statusText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#2c3e50',
-  },
   sensorsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 15,
   },
   sensorCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
+    backgroundColor: 'white',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 15,
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    // Ancho y altura se controlan con width y aspectRatio
   },
-  temperatureCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#e74c3c',
-  },
-  humidityCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#3498db',
-  },
-  soilCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#27ae60',
-  },
-  waterCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#2980b9',
+  sensorIcon: {
+    marginBottom: 10,
   },
   sensorValue: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: '#2c3e50',
     marginVertical: 8,
@@ -304,12 +345,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7f8c8d',
     textAlign: 'center',
+    fontWeight: '500',
   },
   gardenCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 15,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -351,6 +393,17 @@ const styles = StyleSheet.create({
   inactiveStatus: {
     backgroundColor: '#e74c3c',
   },
+  detailsButton: {
+    backgroundColor: '#2ecc71',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  detailsButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -360,8 +413,8 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '90%',
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 20,
+    padding: 25,
     elevation: 5,
   },
   modalTitle: {
@@ -372,10 +425,12 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
+    borderColor: '#e0e0e0',
+    borderRadius: 10,
+    padding: 14,
     marginBottom: 16,
+    fontSize: 16,
+    backgroundColor: '#f8f9fa',
   },
   modalButtons: {
     flexDirection: 'row',
